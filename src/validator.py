@@ -3,6 +3,14 @@ import exception
 
 
 forbidden_function_list = ['open', 'id']
+forbidden_clause_list = [ast.Import, ast.With]
+
+
+def extract_clause_name(node):
+    type_name = str(type(node))
+    tmp = type_name[type_name.index('ast.') + 4:]
+    name = tmp[: tmp.index('\'')]
+    return name
 
 
 class NodeValidator(ast.NodeTransformer):
@@ -16,13 +24,8 @@ class NodeValidator(ast.NodeTransformer):
             self.__validate(child)
 
     def __validate(self, node):
-        # import 문 금지
-        if isinstance(node, ast.Import):
-            raise exception.TryImportClauseException(node.end_lineno)
-
-        # with 문 금지
-        if isinstance(node, ast.With):
-            raise exception.TryWithClauseException(node.end_lineno)
+        if type(node) in forbidden_clause_list:
+            raise exception.UseForbiddenClauseException(node.end_lineno, extract_clause_name(node))
 
         '''
         특정 함수 금지
