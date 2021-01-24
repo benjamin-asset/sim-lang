@@ -2,7 +2,6 @@ import unittest
 
 import exception
 from parser import Parser
-from validator import NodeValidator
 
 
 class MyTestCase(unittest.TestCase):
@@ -12,8 +11,7 @@ class MyTestCase(unittest.TestCase):
 import ast
             """
         )
-        validator = NodeValidator(parser.parse_tree)
-        self.assertRaises(exception.UseForbiddenClauseException, lambda: validator.validate())
+        self.assertRaises(exception.UseForbiddenClauseException, lambda: parser.parse())
 
     def testBlockImport2(self):
         parser = Parser(
@@ -22,8 +20,7 @@ import ast
 import ast
             """
         )
-        validator = NodeValidator(parser.parse_tree)
-        self.assertRaises(exception.UseForbiddenClauseException, lambda: validator.validate())
+        self.assertRaises(exception.UseForbiddenClauseException, lambda: parser.parse())
 
     def testBlockWith(self):
         parser = Parser(
@@ -32,8 +29,7 @@ with open('hi.txt', 'f'):
     pass
             """
         )
-        validator = NodeValidator(parser.parse_tree)
-        self.assertRaises(exception.UseForbiddenClauseException, lambda: validator.validate())
+        self.assertRaises(exception.UseForbiddenClauseException, lambda: parser.parse())
 
     def testBlockOpen(self):
         parser = Parser(
@@ -41,8 +37,7 @@ with open('hi.txt', 'f'):
 a = open
             """
         )
-        validator = NodeValidator(parser.parse_tree)
-        self.assertRaises(exception.CallForbiddenFunctionException, lambda: validator.validate())
+        self.assertRaises(exception.CallForbiddenFunctionException, lambda: parser.parse())
 
     def testBlockOpen2(self):
         parser = Parser(
@@ -50,8 +45,7 @@ a = open
 a = open('file', 'r')
             """
         )
-        validator = NodeValidator(parser.parse_tree)
-        self.assertRaises(exception.CallForbiddenFunctionException, lambda: validator.validate())
+        self.assertRaises(exception.CallForbiddenFunctionException, lambda: parser.parse())
 
     def testBlockId(self):
         parser = Parser(
@@ -59,8 +53,7 @@ a = open('file', 'r')
 a = id(open)
             """
         )
-        validator = NodeValidator(parser.parse_tree)
-        self.assertRaises(exception.CallForbiddenFunctionException, lambda: validator.validate())
+        self.assertRaises(exception.CallForbiddenFunctionException, lambda: parser.parse())
 
 
 if __name__ == '__main__':
