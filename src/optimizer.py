@@ -1,5 +1,5 @@
 import ast
 
 
-def optimize(parse_tree):
-    return parse_tree
+def optimize(expression_tree):
+    return expression_tree
