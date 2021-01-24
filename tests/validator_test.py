@@ -38,7 +38,25 @@ with open('hi.txt', 'f'):
     def testBlockOpen(self):
         parser = Parser(
             """
-open('hi.txt', 'f')
+a = open
+            """
+        )
+        validator = NodeValidator(parser.parse_tree)
+        self.assertRaises(exception.CallForbiddenFunctionException, lambda: validator.validate())
+
+    def testBlockOpen2(self):
+        parser = Parser(
+            """
+a = open('file', 'r')
+            """
+        )
+        validator = NodeValidator(parser.parse_tree)
+        self.assertRaises(exception.CallForbiddenFunctionException, lambda: validator.validate())
+
+    def testBlockId(self):
+        parser = Parser(
+            """
+a = id(open)
             """
         )
         validator = NodeValidator(parser.parse_tree)
