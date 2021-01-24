@@ -13,7 +13,7 @@ import ast
             """
         )
         validator = NodeValidator(parser.parse_tree)
-        self.assertRaises(exception.TryImportException, lambda: validator.validate())
+        self.assertRaises(exception.TryImportClauseException, lambda: validator.validate())
 
     def testBlockImport2(self):
         parser = Parser(
@@ -23,7 +23,26 @@ import ast
             """
         )
         validator = NodeValidator(parser.parse_tree)
-        self.assertRaises(exception.TryImportException, lambda: validator.validate())
+        self.assertRaises(exception.TryImportClauseException, lambda: validator.validate())
+
+    def testBlockWith(self):
+        parser = Parser(
+            """
+with open('hi.txt', 'f'):
+    pass
+            """
+        )
+        validator = NodeValidator(parser.parse_tree)
+        self.assertRaises(exception.TryWithClauseException, lambda: validator.validate())
+
+    def testBlockOpen(self):
+        parser = Parser(
+            """
+open('hi.txt', 'f')
+            """
+        )
+        validator = NodeValidator(parser.parse_tree)
+        self.assertRaises(exception.CallForbiddenFunctionException, lambda: validator.validate())
 
 
 if __name__ == '__main__':
