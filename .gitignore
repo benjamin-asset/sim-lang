@@ -327,3 +327,6 @@ $RECYCLE.BIN/
 # custom
 .idea/
 docker-compose.override.yml
+
+
+practice.py
