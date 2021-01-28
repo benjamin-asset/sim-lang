@@ -3,8 +3,10 @@ from utils.function import Function
 from utils.indicator import Indicator
 from typing import Any
 import pandas as pd
+import exception
+import language_definition
 
-from validator import validate
+from validator import validate, validate_name
 
 
 class Compiler(ast.NodeTransformer):
@@ -23,6 +25,10 @@ class Compiler(ast.NodeTransformer):
             ast.Attribute.__setattr__(self, 'attr', identifier_attr)
             ast.Attribute.__setattr__(self, 'value', expr_value)
 
+    def visit_Name(self, node: Name) -> Any:
+        validate_name(node)
+        return node
+
     def visit_Call(self, node: ast.Call) -> Any:
         function_name = None
         if isinstance(node.func, ast.Attribute):
@@ -35,17 +41,31 @@ class Compiler(ast.NodeTransformer):
             function = ast.copy_location(self.Attribute(clazz, 'get_sma'), node)
 
             args = list()
-            if isinstance(node.args[0].value, str):
-                sub = ast.Subscript(ast.Name('df', ast.Load()), ast.Constant(node.args[0].value), ast.Load())
-                args.append(sub)
+            for argument in node.args:
+                if isinstance(argument.value, str):
+                    if argument.value not in language_definition.field_list:
+                        raise exception.UnDefinedFieldException(node.end_lineno, argument.value)
 
-            if isinstance(node.args[1].value, int):
-                args.append(node.args[1])
+                    # 문자열 파라미터는 Series 참조로 변환
+                    # 예) 'close' -> df['close']
+                    sub = ast.Subscript(
+                        ast.Name(
+                            'df',
+                            ast.Load()
+                        ),
+                        argument,
+                        ast.Load()
+                    )
+                    args.append(sub)
+
+                if isinstance(argument.value, int):
+                    # 정수형 파라미터는 그대로 전달
+                    args.append(argument)
 
             return ast.copy_location(
                 ast.Call(
-                    # expr_func=function,
-                    # expr=function,
+                    expr_func=function,
+                    expr=function,
                     func=function,
                     args=args,
                     keywords=[]
