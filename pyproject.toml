@@ -5,12 +5,11 @@ description = "benjamin asset simulation langugage"
 authors = ["Kyoodong <wind.dong.dream@gmail.com\">"]
 
 [tool.poetry.dependencies]
-python = "^3.9"
-boto3 = "^1.16.59"
-
-[tool.poetry.dev-dependencies]
-pytest = "^6.2.1"
-black = "^20.8b1"
+python = "^3.8"
+PyMySQL = "^1.0.2"
+pytest = "^6.2.2"
+python-dotenv = "^0.15.0"
+pandas = "^1.2.1"
 
 [tool.black]
 line-length = 119

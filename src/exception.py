@@ -32,3 +32,8 @@ class AccessBuiltInVariableException(CompileError):
 class UnDefinedFieldException(CompileError):
     def __init__(self, line_num, field):
         super().__init__("CP-4", f"{field} 는 정의되지 않은 필드입니다.", line_num)
+
+
+class ElseIsNotDefinedException(CompileError):
+    def __init__(self, line_num):
+        super().__init__("CP-5", f"else 가 정의되지 않았습니다.", line_num)
