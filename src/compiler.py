@@ -147,13 +147,13 @@ class Compiler(ast.NodeTransformer):
         else:
             function_stack_data = self.get_bool_op(node)
             if function_stack_data is None:
-                value = self.generic_visit(else_item.value)
+                value = not_test
             else:
-                value = to_and(function_stack_data, self.generic_visit(else_item.value))
+                value = to_and(function_stack_data, not_test)
             else_result = ast.copy_location(
                 to_and(
-                    not_test,
-                    value
+                    value,
+                    self.generic_visit(else_item.value)
                 ),
                 node
             )
@@ -161,13 +161,13 @@ class Compiler(ast.NodeTransformer):
         if isinstance(item, ast.Expr):
             function_stack_data = self.get_bool_op(node)
             if function_stack_data is None:
-                value = self.generic_visit(item.value)
+                value = test
             else:
-                value = to_and(function_stack_data, self.generic_visit(item.value))
+                value = to_and(function_stack_data, test)
             node = ast.copy_location(
                 to_or(
                     ast.copy_location(
-                        to_and(test, value),
+                        to_and(value, self.generic_visit(item.value)),
                         node
                     ),
                     else_result
