@@ -81,6 +81,12 @@ class InnerFunction:
         self.node = node
         self.name = call_to_name(node)
 
+    def __eq__(self, other):
+        return self.name == other.name
+
+    def __hash__(self):
+        return self.name.__hash__()
+
 
 class Compiler(ast.NodeTransformer):
     def __init__(self, source_code):
@@ -109,8 +115,11 @@ class Compiler(ast.NodeTransformer):
         item = node.body[0]
         else_item = node.orelse[0]
 
+        test = self.generic_visit(node.test)
+        not_test = to_not(test)
+
         if isinstance(else_item, ast.If):
-            self.function_stack.appendleft(to_not(node.test))
+            self.function_stack.appendleft(not_test)
             else_result = self.visit_If(else_item)
             self.function_stack.popleft()
         else:
@@ -118,7 +127,7 @@ class Compiler(ast.NodeTransformer):
                 ast.BoolOp(
                     op=ast.And(),
                     values=[
-                        to_not(node.test),
+                        not_test,
                         self.get_bool_op(node),
                         self.generic_visit(else_item.value)
                     ]
@@ -134,7 +143,7 @@ class Compiler(ast.NodeTransformer):
                         ast.copy_location(
                             ast.BoolOp(
                                 op=ast.And(),
-                                values=[self.get_bool_op(node), node.test, self.generic_visit(item.value)]
+                                values=[self.get_bool_op(node), test, self.generic_visit(item.value)]
                             ),
                             node
                         ),
@@ -145,7 +154,7 @@ class Compiler(ast.NodeTransformer):
             )
 
         elif isinstance(item, ast.If):
-            self.function_stack.appendleft(node.test)
+            self.function_stack.appendleft(test)
             result = self.visit_If(item)
             self.function_stack.popleft()
 
