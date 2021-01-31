@@ -76,6 +76,22 @@ def to_not(test):
     )
 
 
+def to_and(left, right):
+    return ast.BinOp(
+        left,
+        ast.BitAnd(),
+        right
+    )
+
+
+def to_or(left, right):
+    return ast.BinOp(
+        left,
+        ast.BitOr(),
+        right
+    )
+
+
 class InnerFunction:
     def __init__(self, node: ast.Call):
         self.node = node
@@ -96,17 +112,23 @@ class Compiler(ast.NodeTransformer):
         self.function_stack = deque()
         self.function_tree = None
 
-    def get_bool_op(self, node):
+    def get_bool_op(self, node, index=0):
         if len(self.function_stack) == 0:
-            return make_constant(True)
-        else:
+            return None
+
+        if len(self.function_stack) == 1:
+            return self.function_stack[0]
+
+        if index + 2 == len(self.function_stack):
             return ast.copy_location(
-                ast.BoolOp(
-                    op=ast.And(),
-                    values=list(self.function_stack)
-                ),
+                to_and(self.function_stack[index], self.function_stack[index + 1]),
                 node
             )
+
+        return ast.copy_location(
+            to_and(self.function_stack[index], self.get_bool_op(node, index + 1)),
+            node
+        )
 
     def visit_If(self, node: ast.If) -> Any:
         if len(node.orelse) == 0:
@@ -123,32 +145,32 @@ class Compiler(ast.NodeTransformer):
             else_result = self.visit_If(else_item)
             self.function_stack.popleft()
         else:
+            function_stack_data = self.get_bool_op(node)
+            if function_stack_data is None:
+                value = self.generic_visit(else_item.value)
+            else:
+                value = to_and(function_stack_data, self.generic_visit(else_item.value))
             else_result = ast.copy_location(
-                ast.BoolOp(
-                    op=ast.And(),
-                    values=[
-                        not_test,
-                        self.get_bool_op(node),
-                        self.generic_visit(else_item.value)
-                    ]
+                to_and(
+                    not_test,
+                    value
                 ),
                 node
             )
 
         if isinstance(item, ast.Expr):
+            function_stack_data = self.get_bool_op(node)
+            if function_stack_data is None:
+                value = self.generic_visit(item.value)
+            else:
+                value = to_and(function_stack_data, self.generic_visit(item.value))
             node = ast.copy_location(
-                ast.BoolOp(
-                    op=ast.Or(),
-                    values=[
-                        ast.copy_location(
-                            ast.BoolOp(
-                                op=ast.And(),
-                                values=[self.get_bool_op(node), test, self.generic_visit(item.value)]
-                            ),
-                            node
-                        ),
-                        else_result
-                    ]
+                to_or(
+                    ast.copy_location(
+                        to_and(test, value),
+                        node
+                    ),
+                    else_result
                 ),
                 node
             )
@@ -159,13 +181,7 @@ class Compiler(ast.NodeTransformer):
             self.function_stack.popleft()
 
             node = ast.copy_location(
-                ast.BoolOp(
-                    op=ast.Or(),
-                    values=[
-                        result,
-                        else_result
-                    ]
-                ),
+                to_or(result, else_result),
                 node
             )
 
