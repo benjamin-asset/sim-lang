@@ -69,6 +69,13 @@ def call_to_name(node: ast.Call):
     return f'#{function_id}_{"_".join(args)}'
 
 
+def to_not(test):
+    return ast.UnaryOp(
+        ast.Not(),
+        test
+    )
+
+
 class InnerFunction:
     def __init__(self, node: ast.Call):
         self.node = node
@@ -85,11 +92,7 @@ class Compiler(ast.NodeTransformer):
 
     def get_bool_op(self, node):
         if len(self.function_stack) == 0:
-            return None
-
-        elif len(self.function_stack) == 1:
-            return self.function_stack[0]
-
+            return make_constant(True)
         else:
             return ast.copy_location(
                 ast.BoolOp(
@@ -103,9 +106,26 @@ class Compiler(ast.NodeTransformer):
         if len(node.orelse) == 0:
             raise ElseIsNotDefinedException(node.end_lineno)
 
-        self.function_stack.appendleft(node.test)
         item = node.body[0]
         else_item = node.orelse[0]
+
+        if isinstance(else_item, ast.If):
+            self.function_stack.appendleft(to_not(node.test))
+            else_result = self.visit_If(else_item)
+            self.function_stack.popleft()
+        else:
+            else_result = ast.copy_location(
+                ast.BoolOp(
+                    op=ast.And(),
+                    values=[
+                        to_not(node.test),
+                        self.get_bool_op(node),
+                        self.generic_visit(else_item.value)
+                    ]
+                ),
+                node
+            )
+
         if isinstance(item, ast.Expr):
             node = ast.copy_location(
                 ast.BoolOp(
@@ -114,51 +134,26 @@ class Compiler(ast.NodeTransformer):
                         ast.copy_location(
                             ast.BoolOp(
                                 op=ast.And(),
-                                values=[self.get_bool_op(node), self.generic_visit(item.value)]
+                                values=[self.get_bool_op(node), node.test, self.generic_visit(item.value)]
                             ),
                             node
                         ),
-                        ast.copy_location(
-                            ast.BoolOp(
-                                op=ast.And(),
-                                values=[
-                                    ast.UnaryOp(
-                                        ast.Not(),
-                                        self.get_bool_op(node)
-                                    ),
-                                    self.generic_visit(else_item.value)
-                                ]
-                            ),
-                            node
-                        )
+                        else_result
                     ]
                 ),
                 node
             )
 
         elif isinstance(item, ast.If):
-            if isinstance(else_item, ast.If):
-                else_result = self.visit_If(else_item)
-            else:
-                else_result = ast.copy_location(
-                    ast.BoolOp(
-                        op=ast.And(),
-                        values=[
-                            ast.UnaryOp(
-                                ast.Not(),
-                                self.get_bool_op(node)
-                            ),
-                            self.generic_visit(else_item.value)
-                        ]
-                    ),
-                    node
-                )
+            self.function_stack.appendleft(node.test)
+            result = self.visit_If(item)
+            self.function_stack.popleft()
 
             node = ast.copy_location(
                 ast.BoolOp(
                     op=ast.Or(),
                     values=[
-                        self.visit_If(item),
+                        result,
                         else_result
                     ]
                 ),
@@ -168,7 +163,6 @@ class Compiler(ast.NodeTransformer):
         else:
             raise Exception()
 
-        self.function_stack.popleft()
         return node
 
     def visit_Call(self, node: ast.Call) -> Any:
