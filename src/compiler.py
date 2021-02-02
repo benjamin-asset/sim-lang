@@ -141,6 +141,9 @@ class InnerFunction:
     def __hash__(self):
         return self.name.__hash__()
 
+    def __lt__(self, other):
+        return self.name < other.name
+
 
 class Compiler(ast.NodeTransformer):
     def __init__(self):
@@ -271,7 +274,7 @@ class Compiler(ast.NodeTransformer):
 
         # 사용된 함수, 파라미터 쌍을 코드로 변환함. 미리 필드로 정의해두고, 참조만 하기 위해서
         body = list()
-        for index, fun in enumerate(self.functions):
+        for index, fun in enumerate(sorted(self.functions)):
             body.append(
                 ast.Assign(
                     targets=[to_field(make_constant(fun.name))],
