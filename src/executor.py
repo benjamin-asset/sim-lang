@@ -1,9 +1,11 @@
 import os
+import ast
 
 from urllib.parse import urlparse
 import pandas as pd
 import pymysql.cursors
 from dotenv import load_dotenv
+
 
 load_dotenv()
 
@@ -22,7 +24,19 @@ def get_connection():
     )
 
 
-def execute(source_code, field_list, start_date, end_date, function):
+def __execute(code, df):
+    '''
+    코드 실행 함수
+    :param code: 실행할 소스코드 ast tree
+    :param df: 데이터 프레임
+    :return:
+    '''
+    results = dict()
+    exec(code)
+    return results['result']
+
+
+def execute(source_code: str, field_list, start_date, end_date):
     connection = get_connection()
     try:
         cursor = connection.cursor(pymysql.cursors.DictCursor)
@@ -37,11 +51,9 @@ def execute(source_code, field_list, start_date, end_date, function):
         # pandas loop
         # for loop 시간 비교
         # apply 시간 비교
-        function(df, source_code)
-
         # 실행
-
-        # 값 누적 후 리턴
+        code_tree = ast.parse(source_code)
+        return __execute(code_tree, df)
     finally:
         connection.close()
 

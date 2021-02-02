@@ -71,7 +71,7 @@ def call_to_name(node: ast.Call):
 
 def to_not(test):
     return ast.UnaryOp(
-        ast.Not(),
+        ast.Invert(),
         test
     )
 
@@ -239,9 +239,24 @@ class Compiler(ast.NodeTransformer):
                 )
             )
 
-        self.function_tree = ast.Module(
+        for expression in self.expression_tree.body:
+            body.append(ast.copy_location(
+                ast.Assign(
+                    targets=[
+                        ast.Subscript(
+                            Name('results'),
+                            ast.Constant('result'),
+                            ast.Store()
+                        )
+                    ],
+                    value=expression
+                ),
+                expression
+            ))
+
+        function_tree = ast.Module(
             body=body,
             type_ignores=[]
         )
-        print(ast.dump(self.function_tree))
-        return self.function_tree, self.expression_tree
+        # print(ast.dump(function_tree))
+        return function_tree
