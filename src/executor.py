@@ -5,9 +5,13 @@ from urllib.parse import urlparse
 import pandas as pd
 import pymysql.cursors
 from dotenv import load_dotenv
+from language_utils import import_class
 
 
 load_dotenv()
+
+Indicator = import_class('utils', 'Indicator')
+Function = import_class('utils', 'function', 'Function')
 
 
 def get_connection():
@@ -36,13 +40,16 @@ def __execute(code, df):
     return results['result']
 
 
-def execute(source_code: str, field_list, start_date, end_date):
+def execute(source_code: str, field_list):
     connection = get_connection()
     try:
+        parse_tree = ast.parse(source_code)
+        executable_code = compile(parse_tree, '', 'exec')
+
         cursor = connection.cursor(pymysql.cursors.DictCursor)
 
         # DB 쿼리
-        sql = "select * from account_user;"
+        sql = "select * from data_candleday order by date limit 200;"
         cursor.execute(sql)
         rows = cursor.fetchall()
         print(rows)
@@ -52,8 +59,7 @@ def execute(source_code: str, field_list, start_date, end_date):
         # for loop 시간 비교
         # apply 시간 비교
         # 실행
-        code_tree = ast.parse(source_code)
-        return __execute(code_tree, df)
+        return __execute(executable_code, df)
     finally:
         connection.close()
 

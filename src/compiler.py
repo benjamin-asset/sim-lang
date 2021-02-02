@@ -7,8 +7,46 @@ from exception import *
 from language_definition import *
 import numpy as np
 from collections import deque
+import io
 
 from validator import validate, validate_name
+
+
+def normalize(code):
+    return ast.unparse(ast.parse(code))
+
+
+def remove_indent(source_code):
+    indent = 0
+    count = 0
+    indent_type = 0
+    for c in source_code:
+        if c == '\n':
+            continue
+        elif c == ' ':
+            count += 1
+            if count == 4:
+                indent += 1
+                count = 0
+        elif c == '\t':
+            indent_type = 1
+            indent += 1
+        else:
+            break
+
+    if indent > 0:
+        buf = io.StringIO(source_code)
+        lines = buf.readlines()
+        source_code = ''
+        if indent_type == 0:
+            indent = indent * 4
+
+        for line in lines:
+            if len(line) <= indent:
+                continue
+
+            source_code += line[indent:]
+    return source_code
 
 
 class Name(ast.Name):
@@ -105,9 +143,12 @@ class InnerFunction:
 
 
 class Compiler(ast.NodeTransformer):
-    def __init__(self, source_code):
-        self.source_code = source_code
-        self.expression_tree = None
+    def __init__(self):
+        self.functions = set()
+        self.function_stack = deque()
+        self.function_tree = None
+
+    def reset(self):
         self.functions = set()
         self.function_stack = deque()
         self.function_tree = None
@@ -222,11 +263,11 @@ class Compiler(ast.NodeTransformer):
         self.functions.add(inner_function)
         return to_field(make_constant(inner_function.name))
 
-    def compile(self):
-        self.expression_tree = ast.parse(self.source_code)
-        print(ast.dump(self.expression_tree))
-        self.generic_visit(self.expression_tree)
-        print(ast.dump(self.expression_tree))
+    def compile(self, source_code):
+        self.reset()
+        source_code = remove_indent(source_code)
+        expression_tree = ast.parse(source_code)
+        self.generic_visit(expression_tree)
 
         # 사용된 함수, 파라미터 쌍을 코드로 변환함. 미리 필드로 정의해두고, 참조만 하기 위해서
         body = list()
@@ -239,24 +280,12 @@ class Compiler(ast.NodeTransformer):
                 )
             )
 
-        for expression in self.expression_tree.body:
-            body.append(ast.copy_location(
-                ast.Assign(
-                    targets=[
-                        ast.Subscript(
-                            Name('results'),
-                            ast.Constant('result'),
-                            ast.Store()
-                        )
-                    ],
-                    value=expression
-                ),
-                expression
-            ))
-
         function_tree = ast.Module(
             body=body,
             type_ignores=[]
         )
-        # print(ast.dump(function_tree))
-        return function_tree
+
+        function_code = ast.unparse(function_tree)
+        expression_code = f"results['result'] = {ast.unparse(expression_tree)}"
+        code = f'{function_code}\n{expression_code}'
+        return normalize(code)
