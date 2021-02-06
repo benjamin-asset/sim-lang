@@ -1,11 +1,11 @@
-import os
 import ast
 
-from urllib.parse import urlparse
 import pandas as pd
 import pymysql.cursors
 from dotenv import load_dotenv
 from language_utils import import_class
+from connection_manager import query
+from datetime import date
 
 
 load_dotenv()
@@ -14,21 +14,7 @@ Indicator = import_class('utils', 'Indicator')
 Function = import_class('utils', 'function', 'Function')
 
 
-def get_connection():
-    database_url = os.getenv('DATABASE_URL')
-    result = urlparse(database_url)
-
-    return pymysql.connect(
-        host=result.hostname,
-        port=result.port,
-        user=result.username,
-        password=result.password,
-        db=result.path[1:] if result.path else '',
-        charset='utf8'
-    )
-
-
-def __execute(code, df):
+def __execute_ticker(code, df):
     '''
     코드 실행 함수
     :param code: 실행할 소스코드 ast tree
@@ -40,28 +26,26 @@ def __execute(code, df):
     return results['result']
 
 
-def execute(source_code: str, field_list):
-    connection = get_connection()
-    try:
-        parse_tree = ast.parse(source_code)
-        executable_code = compile(parse_tree, '', 'exec')
+def execute_ticker(source_code: str, field_list, from_date: date, to_date: date):
+    parse_tree = ast.parse(source_code)
+    executable_code = compile(parse_tree, '', 'exec')
 
-        cursor = connection.cursor(pymysql.cursors.DictCursor)
+    # DB 쿼리
+    sql = f"select * from data_candleday " \
+          f"where date between '{from_date}' and '{to_date}' " \
+          f"order by date;"
+    rows = query(sql)
+    df = pd.DataFrame(rows)
+    grouped = df.groupby('date')
+    for key, group in grouped:
+        group = group.reset_index(drop=True)
+        print(group)
 
-        # DB 쿼리
-        sql = "select * from data_candleday order by date limit 200;"
-        cursor.execute(sql)
-        rows = cursor.fetchall()
-        print(rows)
-        df = pd.DataFrame(rows)
-
-        # pandas loop
-        # for loop 시간 비교
-        # apply 시간 비교
-        # 실행
-        return __execute(executable_code, df)
-    finally:
-        connection.close()
+    # pandas loop
+    # for loop 시간 비교
+    # apply 시간 비교
+    # 실행
+    return __execute_ticker(executable_code, df)
 
 
 def by_apply(df, function):
@@ -78,4 +62,4 @@ def by_np_vector(df, function):
 
 
 if __name__ == '__main__':
-    execute("1 + 2", 1, 2, 3)
+    execute_ticker("1 + 2", 1, date(2021, 1, 1), date(2022, 1, 1))

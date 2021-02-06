@@ -26,4 +26,5 @@ built_in_function_list = [
     Function('momentum', 'Indicator', 'get_momentum'),
     Function('ibs', 'Indicator', 'get_ibs'),
     Function('envelope', 'Indicator', 'get_envelope'),
+    Function('rank', 'Function', 'get_rank'),
 ]
