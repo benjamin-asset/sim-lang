@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 from language_utils import import_class
 from connection_manager import query
 from datetime import date
+from stock_type import StockType
+from compiler import Compiler
 
 
 load_dotenv()
@@ -14,38 +16,35 @@ Indicator = import_class('utils', 'Indicator')
 Function = import_class('utils', 'function', 'Function')
 
 
-def __execute_ticker(code, df):
-    '''
-    코드 실행 함수
-    :param code: 실행할 소스코드 ast tree
-    :param df: 데이터 프레임
-    :return:
-    '''
-    results = dict()
-    exec(code)
-    return results['result']
+compiler = Compiler()
 
 
-def execute_ticker(source_code: str, field_list, from_date: date, to_date: date):
-    parse_tree = ast.parse(source_code)
-    executable_code = compile(parse_tree, '', 'exec')
+def __execute_term(code, df):
+    exec(compile(code, '', mode='exec'))
+    return df
 
-    # DB 쿼리
-    sql = f"select * from data_candleday " \
-          f"where date between '{from_date}' and '{to_date}' " \
-          f"order by date;"
+
+def execute_term(source_code: str, stock_type: StockType, from_date: date, to_date: date):
+    compile_result = compiler.compile(source_code)
+
+    sql = f"select * from data_candleday where date between '{from_date}' and '{to_date}';"
     rows = query(sql)
-    df = pd.DataFrame(rows)
-    grouped = df.groupby('date')
-    for key, group in grouped:
-        group = group.reset_index(drop=True)
-        print(group)
 
-    # pandas loop
-    # for loop 시간 비교
-    # apply 시간 비교
-    # 실행
-    return __execute_ticker(executable_code, df)
+    total_df = pd.DataFrame(rows)
+    print('\n'.join(map(lambda x: x.code, compile_result)))
+
+    for result in compile_result:
+        # TODO: is_rank 값 잘 들어가는지 계속 확인하고, 검증할것
+        if result.is_rank:
+            y = total_df.groupby('date').apply(lambda df: __execute_term(result.code, df)).reset_index(drop=True)
+        else:
+            y = total_df.groupby('ticker_id').apply(lambda df: __execute_term(result.code, df)).reset_index(drop=True)
+
+        different_columns = total_df.columns.symmetric_difference(y.columns)
+        for column in different_columns:
+            total_df.insert(0, column, y[column])
+
+    return total_df
 
 
 def by_apply(df, function):

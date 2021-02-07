@@ -1,13 +1,9 @@
 from connection_manager import query
-from executor import execute_ticker
+from executor import execute_term
 from stock_type import StockType
-from compiler import Compiler
-from datetime import date
+from datetime import date, timedelta
 import pandas as pd
 from language_utils import import_class
-
-
-compiler = Compiler()
 
 
 Indicator = import_class('utils', 'Indicator')
@@ -20,25 +16,30 @@ def __fun(code, df):
 
 
 def execute(source_code, stock_type: StockType, from_date: date):
-    compile_result = compiler.compile(source_code)
-    sql = "select * from data_candleday where date >= '2021-01-01';"
-    rows = query(sql)
+    diff_date = date.today() - from_date
+    # TODO: 계산식이 복잡하면 term 을 더 작게하여 잘게 쪼갤 수 있는 기능 구현하기
+    term = 30
 
-    total_df = pd.DataFrame(rows)
-    print('\n'.join(map(lambda x: x.code, compile_result)))
+    origin_from_date = from_date
+    result_list = list()
+    extra = 0
+    if diff_date.days % term > 0 or diff_date.days == 0:
+        extra = 1
+    for i in range(int(diff_date.days / term) + extra):
+        to_date = from_date + timedelta(days=term - 1)
 
-    for result in compile_result:
-        # TODO: is_rank 값 잘 들어가는지 계속 확인하고, 검증할것
-        if result.is_rank:
-            y = total_df.groupby('date').apply(lambda df: __fun(result.code, df)).reset_index(drop=True)
-        else:
-            y = total_df.groupby('ticker_id').apply(lambda df: __fun(result.code, df)).reset_index(drop=True)
+        # 앞뒤로 여유 일수를 붙여줌
+        effective_from_date = from_date - timedelta(days=30)
+        effective_to_date = to_date + timedelta(days=30)
+        result = execute_term(source_code, stock_type, effective_from_date, effective_to_date)
+        result_list.append(result)
+        from_date = to_date + timedelta(days=1)
 
-        different_columns = total_df.columns.symmetric_difference(y.columns)
-        for column in different_columns:
-            total_df.insert(0, column, y[column])
-
-    return total_df[Compiler.RESULT_COLUMN]
+    if len(result_list) == 1:
+        combined_result = result_list[0]
+    else:
+        combined_result = pd.concat(result_list).drop_duplicates(subset=['date', 'ticker_id']).reset_index(drop=True)
+    return combined_result[combined_result['date'] >= origin_from_date]
 
 
 if __name__ == '__main__':
@@ -47,5 +48,5 @@ if __name__ == '__main__':
         rank(rank(sma(close, 3))) < 0.5
         """,
         0,
-        date(2020, 12, 1)
+        date(2021, 1, 1)
     )
