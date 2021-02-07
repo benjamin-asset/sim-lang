@@ -39,13 +39,14 @@ def execute(source_code, stock_type: StockType, from_date: date):
         combined_result = result_list[0]
     else:
         combined_result = pd.concat(result_list).drop_duplicates(subset=['date', 'ticker_id']).reset_index(drop=True)
-    return combined_result[combined_result['date'] >= origin_from_date]
+    execution_result = combined_result[combined_result['date'] >= origin_from_date]
+    return execution_result
 
 
 if __name__ == '__main__':
     execute(
         """
-        rank(rank(sma(close, 3))) < 0.5
+        rank(sma(close, 3)) < 0.5
         """,
         0,
         date(2021, 1, 1)

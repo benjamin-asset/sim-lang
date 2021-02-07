@@ -8,6 +8,7 @@ from connection_manager import query, Isolation
 from datetime import date
 from stock_type import StockType
 from compiler import Compiler
+import sql_builder
 
 
 load_dotenv()
@@ -27,12 +28,7 @@ def __execute_term(code, df):
 def execute_term(source_code: str, stock_type: StockType, from_date: date, to_date: date):
     compile_result = compiler.compile(source_code)
 
-    sql = """
-    select td.date, dc.ticker_id, dc.close from data_iskoreatradingday td
-    left join data_candleday dc on td.date = dc.date
-    where td.is_tradable = 1
-    and td.date between '{}' and '{}';
-    """.format(from_date, to_date)
+    sql = sql_builder.build(list(), from_date, to_date)
     rows = query(sql, Isolation.REPEATABLE_READ)
 
     total_df = pd.DataFrame(rows)
