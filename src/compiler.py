@@ -92,6 +92,10 @@ class Compiler(ast.NodeTransformer):
             node
         )
 
+    def visit_Name(self, node: Name) -> Any:
+        arg = ast.Constant(node.id, node.id)
+        return to_field(arg)
+
     def visit_If(self, node: ast.If) -> Any:
         if len(node.orelse) == 0:
             raise ElseIsNotDefinedException(node.end_lineno)
@@ -210,7 +214,6 @@ class Compiler(ast.NodeTransformer):
 
         # 사용된 함수, 파라미터 쌍을 코드로 변환함. 미리 필드로 정의해두고, 참조만 하기 위해서
         body = list()
-        function = None
         cur_is_rank = False
         for index, node in enumerate(PostOrderIter(self.function_dependency_tree)):
             if node.name == 'root':

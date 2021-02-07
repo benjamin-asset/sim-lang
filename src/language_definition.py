@@ -19,7 +19,7 @@ class Function:
 field_list = ['close', 'high', 'log']
 forbidden_function_list = ['open', 'id']
 forbidden_clause_list = [ast.Import, ast.With, ast.Return]
-built_in_variable_list = ['df', 'result']
+built_in_variable_list = ['df', 'result', 'usd', 'yen', 'euro']
 
 built_in_function_list = [
     Function('sma', 'Indicator', 'get_sma'),

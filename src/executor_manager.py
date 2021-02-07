@@ -46,7 +46,7 @@ def execute(source_code, stock_type: StockType, from_date: date):
 if __name__ == '__main__':
     execute(
         """
-        rank(sma(close, 3)) < 0.5
+        usd < 1100
         """,
         0,
         date(2021, 1, 1)

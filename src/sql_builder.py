@@ -7,9 +7,18 @@ def build(fields, from_date: date, to_date: date) -> str:
     joins = ['left join data_candleday dc on td.date = dc.date']
 
     return '''
-    select * from data_candleday c
+    select c.date, c.ticker_id, c.open, c.high, c.low, c.close, c.vol, c.tr_val,
+       tt.f_buy_tr_val, tt.f_buy_vol, tt.o_buy_tr_val, tt.o_buy_vol, tt.p_buy_vol,
+       tt.pension_f_buy_vol, tt.pension_f_tr_val, ti.cap, ti.shares_out,
+       ded.close usd,
+       dey.close yen,
+       deu.close euro
+    from data_candleday c
     left join data_daytradingtrend tt using(date, ticker_id)
     left join data_daytradinginfo ti using(date, ticker_id)
+    left join data_exchangeratecandleday ded on c.date = ded.date and ded.ticker = 'USDKRW'
+    left join data_exchangeratecandleday dey on c.date = dey.date and dey.ticker = 'YENKRW'
+    left join data_exchangeratecandleday deu on c.date = deu.date and deu.ticker = 'EUROKRW'
     where c.date between '{}' and '{}'
     '''.format(from_date, to_date)
 
