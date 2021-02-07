@@ -13,9 +13,14 @@ Function = import_class('utils', 'function', 'Function')
 
 
 class CompileResult:
-    def __init__(self, code: str, is_rank: bool):
-        self.code = code
-        self.is_rank = is_rank
+    class Item:
+        def __init__(self, code: str, is_rank: bool):
+            self.code = code
+            self.is_rank = is_rank
+
+    def __init__(self, item_list: list, fields: set):
+        self.item_list = item_list
+        self.fields = fields
 
 
 class Name(ast.Name):
@@ -57,13 +62,7 @@ class Compiler(ast.NodeTransformer):
     RESULT_COLUMN = '#result'
 
     def __init__(self):
-        self.function_dependency_tree = Node("root")
-        self.function_dependency_stack = deque()
-        self.function_dependency_stack.appendleft(self.function_dependency_tree)
-        self.functions = dict()
-        self.expression_stack = deque()
-        self.expression_ast_tree = None
-        self.rank_function_list = list()
+        self.reset()
 
     def reset(self):
         self.function_dependency_tree = Node("root")
@@ -73,6 +72,7 @@ class Compiler(ast.NodeTransformer):
         self.expression_stack = deque()
         self.expression_ast_tree = None
         self.rank_function_list = list()
+        self.fields = set()
 
     def get_bool_op(self, node, index=0):
         if len(self.expression_stack) == 0:
@@ -173,6 +173,7 @@ class Compiler(ast.NodeTransformer):
             for argument in node.args:
                 if isinstance(argument, ast.Name):
                     if argument.id in field_list:
+                        self.fields.add(argument.id)
                         arg = ast.Constant(argument.id, argument.id)
 
                     else:
@@ -199,13 +200,13 @@ class Compiler(ast.NodeTransformer):
         self.functions[inner_function.name] = inner_function
         return to_field(make_constant(inner_function.name))
 
-    def compile(self, source_code) -> list:
+    def compile(self, source_code) -> CompileResult:
         self.reset()
         source_code = remove_indent(source_code)
         expression_tree = ast.parse(source_code)
         self.generic_visit(expression_tree)
 
-        code_list = list()
+        result_item_list = list()
 
         # 사용된 함수, 파라미터 쌍을 코드로 변환함. 미리 필드로 정의해두고, 참조만 하기 위해서
         body = list()
@@ -219,7 +220,7 @@ class Compiler(ast.NodeTransformer):
                         type_ignores=[]
                     )
                     function_code = ast.unparse(function_tree)
-                    code_list.append(CompileResult(function_code, cur_is_rank))
+                    result_item_list.append(CompileResult.Item(function_code, cur_is_rank))
                 break
 
             function = self.functions[node.name]
@@ -230,7 +231,7 @@ class Compiler(ast.NodeTransformer):
                         type_ignores=[]
                     )
                     function_code = ast.unparse(function_tree)
-                    code_list.append(CompileResult(function_code, cur_is_rank))
+                    result_item_list.append(CompileResult.Item(function_code, cur_is_rank))
                     body = list()
 
             cur_is_rank = function.is_rank
@@ -243,8 +244,8 @@ class Compiler(ast.NodeTransformer):
             )
 
         expression_code = f"df['{Compiler.RESULT_COLUMN}'] = {ast.unparse(expression_tree)}"
-        code_list.append(CompileResult(expression_code, False))
-        return code_list
+        result_item_list.append(CompileResult.Item(expression_code, False))
+        return CompileResult(result_item_list, self.fields)
 
 
 def normalize(code):

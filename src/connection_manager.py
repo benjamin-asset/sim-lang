@@ -7,6 +7,7 @@ from enum import Enum
 class Isolation(Enum):
     READ_COMMITTED = "READ COMMITTED"
     READ_UNCOMMITTED = "READ UNCOMMITTED"
+    REPEATABLE_READ = "REPEATABLE READ"
 
 
 def get_connection():
@@ -28,15 +29,13 @@ def query(sql: str, isolation_level=None):
     try:
         cursor = connection.cursor(pymysql.cursors.DictCursor)
         if isolation_level is not None:
-            isolation(cursor, isolation_level, lambda x: cursor.execute(sql))
-        else:
-            cursor.execute(sql)
-        return cursor.fetchall()
+            cursor.execute(f"SET SESSION TRANSACTION ISOLATION LEVEL {isolation_level.value}")
+
+        cursor.execute(sql)
+        rows = cursor.fetchall()
+
+        if isolation_level is not None:
+            cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+        return rows
     finally:
         connection.close()
-
-
-def isolation(cursor, isolation_level, function):
-    cursor.execute(f"SET SESSION TRANSACTION ISOLATION LEVEL {isolation_level.value}")
-    function()
-    cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ")

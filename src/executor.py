@@ -27,18 +27,21 @@ def __execute_term(code, df):
 def execute_term(source_code: str, stock_type: StockType, from_date: date, to_date: date):
     compile_result = compiler.compile(source_code)
 
-    sql = f"select * from data_candleday where date between '{from_date}' and '{to_date}';"
-    rows = query(sql, Isolation.READ_UNCOMMITTED)
+    sql = """
+    select td.date, dc.ticker_id, dc.close from data_iskoreatradingday td
+    left join data_candleday dc on td.date = dc.date
+    where td.is_tradable = 1
+    and td.date between '{}' and '{}';
+    """.format(from_date, to_date)
+    rows = query(sql, Isolation.REPEATABLE_READ)
 
     total_df = pd.DataFrame(rows)
-    print('\n'.join(map(lambda x: x.code, compile_result)))
-
-    for result in compile_result:
+    for item in compile_result.item_list:
         # TODO: is_rank 값 잘 들어가는지 계속 확인하고, 검증할것
-        if result.is_rank:
-            y = total_df.groupby('date').apply(lambda df: __execute_term(result.code, df)).reset_index(drop=True)
+        if item.is_rank:
+            y = total_df.groupby('date').apply(lambda df: __execute_term(item.code, df)).reset_index(drop=True)
         else:
-            y = total_df.groupby('ticker_id').apply(lambda df: __execute_term(result.code, df)).reset_index(drop=True)
+            y = total_df.groupby('ticker_id').apply(lambda df: __execute_term(item.code, df)).reset_index(drop=True)
 
         different_columns = total_df.columns.symmetric_difference(y.columns)
         for column in different_columns:
