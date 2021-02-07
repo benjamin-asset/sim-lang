@@ -1,6 +1,12 @@
 import os
 from urllib.parse import urlparse
 import pymysql.cursors
+from enum import Enum
+
+
+class Isolation(Enum):
+    READ_COMMITTED = "READ COMMITTED"
+    READ_UNCOMMITTED = "READ UNCOMMITTED"
 
 
 def get_connection():
@@ -17,12 +23,20 @@ def get_connection():
     )
 
 
-def query(sql):
+def query(sql: str, isolation_level=None):
     connection = get_connection()
     try:
         cursor = connection.cursor(pymysql.cursors.DictCursor)
-        cursor.execute(sql)
-        rows = cursor.fetchall()
-        return rows
+        if isolation_level is not None:
+            isolation(cursor, isolation_level, lambda x: cursor.execute(sql))
+        else:
+            cursor.execute(sql)
+        return cursor.fetchall()
     finally:
         connection.close()
+
+
+def isolation(cursor, isolation_level, function):
+    cursor.execute(f"SET SESSION TRANSACTION ISOLATION LEVEL {isolation_level.value}")
+    function()
+    cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ")

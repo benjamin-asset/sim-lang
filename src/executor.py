@@ -4,7 +4,7 @@ import pandas as pd
 import pymysql.cursors
 from dotenv import load_dotenv
 from language_utils import import_class
-from connection_manager import query
+from connection_manager import query, Isolation
 from datetime import date
 from stock_type import StockType
 from compiler import Compiler
@@ -28,7 +28,7 @@ def execute_term(source_code: str, stock_type: StockType, from_date: date, to_da
     compile_result = compiler.compile(source_code)
 
     sql = f"select * from data_candleday where date between '{from_date}' and '{to_date}';"
-    rows = query(sql)
+    rows = query(sql, Isolation.READ_UNCOMMITTED)
 
     total_df = pd.DataFrame(rows)
     print('\n'.join(map(lambda x: x.code, compile_result)))
