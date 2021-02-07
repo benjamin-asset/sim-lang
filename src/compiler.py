@@ -13,9 +13,9 @@ Function = import_class('utils', 'function', 'Function')
 
 
 class CompileResult:
-    def __init__(self, code: str, rank_function_list: list):
+    def __init__(self, code: str, is_rank: bool):
         self.code = code
-        self.rank_function_list = rank_function_list
+        self.is_rank = is_rank
 
 
 class Name(ast.Name):
@@ -38,9 +38,10 @@ class Call(ast.Call):
 
 
 class InnerFunction:
-    def __init__(self, node: ast.Call):
+    def __init__(self, node: ast.Call, is_rank: bool):
         self.node = node
         self.name = call_to_name(node)
+        self.is_rank = is_rank
 
     def __eq__(self, other):
         return self.name == other.name
@@ -156,10 +157,10 @@ class Compiler(ast.NodeTransformer):
         elif isinstance(node.func, ast.Name):
             function_name = node.func.id
 
+        is_rank = False
         # 랭크함수가 있는지 확인
         if function_name == 'rank':
-            # TODO:
-            self.has_rank_function = True
+            is_rank = True
 
         parent_dependency_node = Node(function_name, self.function_dependency_stack[0])
         self.function_dependency_stack.appendleft(parent_dependency_node)
@@ -191,40 +192,57 @@ class Compiler(ast.NodeTransformer):
             pass
 
         self.function_dependency_stack.popleft()
-        inner_function = InnerFunction(node)
+        inner_function = InnerFunction(node, is_rank)
         parent_dependency_node.name = inner_function.name
-        self.functions[inner_function.name] = inner_function.node
+        self.functions[inner_function.name] = inner_function
         return to_field(make_constant(inner_function.name))
 
-    def compile(self, source_code) -> CompileResult:
+    def compile(self, source_code) -> list:
         self.reset()
         source_code = remove_indent(source_code)
         expression_tree = ast.parse(source_code)
         self.generic_visit(expression_tree)
 
+        code_list = list()
+
         # 사용된 함수, 파라미터 쌍을 코드로 변환함. 미리 필드로 정의해두고, 참조만 하기 위해서
         body = list()
+        function = None
+        cur_is_rank = False
         for index, node in enumerate(PostOrderIter(self.function_dependency_tree)):
             if node.name == 'root':
+                if len(body) > 0:
+                    function_tree = ast.Module(
+                        body=body,
+                        type_ignores=[]
+                    )
+                    function_code = ast.unparse(function_tree)
+                    code_list.append(CompileResult(function_code, cur_is_rank))
                 break
 
+            function = self.functions[node.name]
+            if function.is_rank != cur_is_rank:
+                if len(body) > 0:
+                    function_tree = ast.Module(
+                        body=body,
+                        type_ignores=[]
+                    )
+                    function_code = ast.unparse(function_tree)
+                    code_list.append(CompileResult(function_code, cur_is_rank))
+                    body = list()
+
+            cur_is_rank = function.is_rank
             body.append(
                 ast.Assign(
                     targets=[to_field(make_constant(node.name))],
-                    value=self.functions[node.name],
+                    value=function.node,
                     lineno=index
                 )
             )
 
-        function_tree = ast.Module(
-            body=body,
-            type_ignores=[]
-        )
-
-        function_code = ast.unparse(function_tree)
-        expression_code = f"results['result'] = {ast.unparse(expression_tree)}"
-        code = f'{function_code}\n{expression_code}'
-        return CompileResult(normalize(code), self.rank_function_list)
+        expression_code = f"df['final_result'] = {ast.unparse(expression_tree)}"
+        code_list.append(CompileResult(expression_code, False))
+        return code_list
 
 
 def normalize(code):
