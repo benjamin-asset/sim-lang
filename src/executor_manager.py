@@ -4,42 +4,47 @@ from stock_type import StockType
 from compiler import Compiler
 from datetime import date
 import pandas as pd
+from language_utils import import_class
 
 
 compiler = Compiler()
 
 
+Indicator = import_class('utils', 'Indicator')
+Function = import_class('utils', 'function', 'Function')
+
+
+def __fun(code, df):
+    exec(compile(code, '', mode='exec'))
+    return df
+
+
 def execute(source_code, stock_type: StockType, from_date: date):
-    result = compiler.compile(source_code)
-    df = pd.DataFrame()
+    compile_result = compiler.compile(source_code)
+    sql = "select * from data_candleday where date >= '2021-01-01';"
+    rows = query(sql)
 
-    # rank 가 종목 단위인지 날짜 단위인지도 중요함
-    # 종목 단위 rank
-    if len(result.rank_function_list) > 0:
-        if stock_type == StockType.KOSPI:
-            sql = f""
-        elif stock_type == StockType.KOSPI_150:
-            sql = f""
-        elif stock_type == StockType.KOSDAQ:
-            sql = f""
-        elif stock_type == StockType.KOSDAQ_200:
-            sql = f""
+    total_df = pd.DataFrame(rows)
+    print('\n'.join(map(lambda x: x.code, compile_result)))
+
+    for result in compile_result:
+        # TODO: is_rank 값 잘 들어가는지 계속 확인하고, 검증할것
+        if result.is_rank:
+            y = total_df.groupby('date').apply(lambda df: __fun(result.code, df)).reset_index(drop=True)
         else:
-            sql = f"select * from data_candleday where date >= '{from_date}' order by date;"
+            y = total_df.groupby('ticker_id').apply(lambda df: __fun(result.code, df)).reset_index(drop=True)
 
-        rows = query(sql)
+        different_columns = total_df.columns.symmetric_difference(y.columns)
+        for column in different_columns:
+            total_df.insert(0, column, y[column])
 
-        # 열 : 종목, 행 : 날짜, 값 : 순위인 판다스 데이터 프레임을 만들어내고 -> 이를 날짜로 정렬한 뒤 리스트로 쪼개어서 각 람다에 전달해야함(종목에 맞게)
-        exec("df['a'] = rows(d)")
-
-    # TODO: 종목 몇개 단위로 쪼개어서 실행
-    execute_ticker(result.code, None, None)
+    return total_df[Compiler.RESULT_COLUMN]
 
 
 if __name__ == '__main__':
     execute(
         """
-        a = 10
+        rank(rank(sma(close, 3))) < 0.5
         """,
         0,
         date(2020, 12, 1)

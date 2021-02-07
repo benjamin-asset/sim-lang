@@ -54,6 +54,8 @@ class InnerFunction:
 
 
 class Compiler(ast.NodeTransformer):
+    RESULT_COLUMN = '#result'
+
     def __init__(self):
         self.function_dependency_tree = Node("root")
         self.function_dependency_stack = deque()
@@ -240,7 +242,7 @@ class Compiler(ast.NodeTransformer):
                 )
             )
 
-        expression_code = f"df['final_result'] = {ast.unparse(expression_tree)}"
+        expression_code = f"df['{Compiler.RESULT_COLUMN}'] = {ast.unparse(expression_tree)}"
         code_list.append(CompileResult(expression_code, False))
         return code_list
 
