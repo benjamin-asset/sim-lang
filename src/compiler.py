@@ -5,11 +5,6 @@ from anytree import Node, PostOrderIter
 
 from exception import *
 from language_definition import *
-from language_utils import import_class
-
-
-Indicator = import_class('utils.indicator')
-Function = import_class('utils.function')
 
 
 class CompileResult:
@@ -18,9 +13,10 @@ class CompileResult:
             self.code = code
             self.is_rank = is_rank
 
-    def __init__(self, item_list: list, fields: set):
+    def __init__(self, item_list: list, fields: set, max_ts_delay: int):
         self.item_list = item_list
         self.fields = fields
+        self.max_ts_delay = max_ts_delay
 
 
 class Name(ast.Name):
@@ -73,6 +69,7 @@ class Compiler(ast.NodeTransformer):
         self.expression_ast_tree = None
         self.rank_function_list = list()
         self.fields = set()
+        self.max_ts_delay = 0
 
     def get_bool_op(self, node, index=0):
         if len(self.expression_stack) == 0:
@@ -194,7 +191,9 @@ class Compiler(ast.NodeTransformer):
                 elif isinstance(argument, ast.Call):
                     args.append(self.visit_Call(argument))
 
-            node = make_function_call(fun.module, fun.name, args, node)
+            if fun.en_name == 'ts_delay' and self.max_ts_delay < node.args[1].value:
+                self.max_ts_delay = node.args[1].value
+            node = make_function_call(fun.module, fun.en_name, args, node)
         else:
             pass
 
@@ -248,7 +247,7 @@ class Compiler(ast.NodeTransformer):
 
         expression_code = f"df['{Compiler.RESULT_COLUMN}'] = {ast.unparse(expression_tree)}"
         result_item_list.append(CompileResult.Item(expression_code, False))
-        return CompileResult(result_item_list, self.fields)
+        return CompileResult(result_item_list, self.fields, self.max_ts_delay)
 
 
 def normalize(code):
