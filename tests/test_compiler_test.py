@@ -1,8 +1,9 @@
 from compiler import Compiler, remove_indent, normalize
-from language_utils import import_class
+from language_utils import import_module
 
-Indicator = import_class('utils', 'Indicator')
-Function = import_class('utils', 'function', 'Function')
+indicator = import_module('utils', 'indicator')
+function = import_module('utils', 'function')
+language = import_module('language_definition')
 
 import executor
 

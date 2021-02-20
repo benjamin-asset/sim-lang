@@ -3,7 +3,7 @@ import ast
 import pandas as pd
 import pymysql.cursors
 from dotenv import load_dotenv
-from language_utils import import_class
+from language_utils import import_module
 from connection_manager import query, Isolation
 from datetime import date
 from stock_type import StockType
@@ -13,8 +13,9 @@ import sql_builder
 
 load_dotenv()
 
-Indicator = import_class('utils.indicator')
-Function = import_class('utils.function')
+indicator = import_module('utils', 'indicator')
+function = import_module('utils', 'function')
+language = import_module('language_definition')
 
 
 compiler = Compiler()
@@ -29,7 +30,7 @@ def execute_term(source_code: str, stock_type: StockType, from_date: date, to_da
     compile_result = compiler.compile(source_code)
 
     sql = sql_builder.build(list(), from_date, to_date)
-    rows = query(sql, Isolation.REPEATABLE_READ)
+    rows = query(sql, Isolation.READ_COMMITTED)
 
     total_df = pd.DataFrame(rows)
     for item in compile_result.item_list:
@@ -57,7 +58,3 @@ def by_pd_vector(df, function):
 # https://aldente0630.github.io/data-science/2018/08/05/a-beginners-guide-to-optimizing-pandas-code-for-speed.html
 def by_np_vector(df, function):
     df['custom'] = function()
-
-
-if __name__ == '__main__':
-    execute_ticker("1 + 2", 1, date(2021, 1, 1), date(2022, 1, 1))
