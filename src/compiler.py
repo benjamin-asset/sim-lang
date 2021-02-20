@@ -8,8 +8,8 @@ from language_definition import *
 from language_utils import import_class
 
 
-Indicator = import_class('utils', 'Indicator')
-Function = import_class('utils', 'function', 'Function')
+Indicator = import_class('utils.indicator')
+Function = import_class('utils.function')
 
 
 class CompileResult:

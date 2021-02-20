@@ -8,8 +8,8 @@ def build(fields, from_date: date, to_date: date) -> str:
 
     return '''
     select c.date, c.ticker_id, c.open, c.high, c.low, c.close, c.vol, c.tr_val,
-       tt.f_buy_tr_val, tt.f_buy_vol, tt.o_buy_tr_val, tt.o_buy_vol, tt.p_buy_vol,
-       tt.pension_f_buy_vol, tt.pension_f_tr_val, ti.cap, ti.shares_out,
+       tt.p_buy_vol, tt.org_buy_vol, tt.f_buy_vol, tt.pen_buy_vol, tt.f_buy_tr_val,
+       tt.org_buy_tr_val, tt.p_buy_tr_val, tt.pen_buy_tr_val, tt.etc_buy_tr_val, tt.etc_buy_vol,
        ded.close usd,
        dey.close yen,
        deu.close euro

@@ -6,8 +6,8 @@ import pandas as pd
 from language_utils import import_class
 
 
-Indicator = import_class('utils', 'Indicator')
-Function = import_class('utils', 'function', 'Function')
+Indicator = import_class('utils', 'indicator')
+Function = import_class('utils', 'function')
 
 
 def __fun(code, df):
@@ -48,6 +48,6 @@ if __name__ == '__main__':
         """
         usd < 1100
         """,
-        0,
+        StockType.KOSDAQ,
         date(2021, 1, 1)
     )

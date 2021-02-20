@@ -13,8 +13,8 @@ import sql_builder
 
 load_dotenv()
 
-Indicator = import_class('utils', 'Indicator')
-Function = import_class('utils', 'function', 'Function')
+Indicator = import_class('utils.indicator')
+Function = import_class('utils.function')
 
 
 compiler = Compiler()
