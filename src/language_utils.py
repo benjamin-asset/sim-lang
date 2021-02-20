@@ -1,7 +1,8 @@
-def import_class(*args):
+import importlib
+
+
+def import_module(*args):
     if len(args) == 1:
-        return __import__(args[0])
-    module = __import__('.'.join(args[:-1]))
-    for arg in args[1: -1]:
-        module = getattr(module, arg)
-    return getattr(module, args[-1])
+        return importlib.import_module(args[0])
+    return importlib.import_module('.'.join(args))
+    # return getattr(module, args[-1])
