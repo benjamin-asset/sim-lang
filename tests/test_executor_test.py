@@ -1,8 +1,8 @@
-from compiler import Compiler, remove_indent, normalize
-from language_utils import import_module
+from language.compiler import Compiler
+from language.language_utils import import_module
 
-import executor_manager
-from stock_type import StockType
+from language import executor_manager
+from language.enum.stock_type import StockType
 from datetime import date
 
 Indicator = import_module('utils', 'indicator')

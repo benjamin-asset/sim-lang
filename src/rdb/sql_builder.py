@@ -35,11 +35,3 @@ def build(fields, from_date: date, to_date: date) -> str:
     left join data_exchangeratecandleday deu on c.date = deu.date and deu.ticker = 'EUROKRW'
     where c.date between '{}' and '{}'
     """.format(field_sql, table_sql, from_date, to_date)
-
-    # return '''
-    # select {}
-    # from data_iskoreatradingday td
-    # {}
-    # where td.is_tradable = 1
-    # and td.date between '{}' and '{}'
-    # '''.format(','.join(columns), '\n'.join(joins), from_date, to_date)

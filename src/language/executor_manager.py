@@ -1,9 +1,8 @@
-from connection_manager import query
-from executor import execute_term
-from stock_type import StockType
+from language.executor import execute_term
+from language.enum.stock_type import StockType
 from datetime import date, timedelta
 import pandas as pd
-from language_utils import import_module
+from language.language_utils import import_module
 
 # indicator = import_module('utils', 'indicator')
 # function = import_module('utils', 'function')
@@ -57,7 +56,7 @@ if __name__ == '__main__':
         ts_delay(increase_from_lowest_price(low, close, 3), 1) >= 0.125 and ts_delay(increase_from_lowest_price(low, close, 3), 2) >= 0.125
         """,
         StockType.ALL,
-        date(2014, 1, 1),
-        date(2015, 12, 31)
+        date(2017, 1, 1),
+        date(2019, 12, 31)
     )
     print(result)

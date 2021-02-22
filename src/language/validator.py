@@ -1,6 +1,5 @@
-import ast
 import exception
-import language_definition
+from language import language_definition
 
 
 def extract_clause_name(node):

@@ -331,3 +331,5 @@ docker-compose.override.yml
 
 practice.py
 pandas_practice.py
+
+tests/resources/*.csv

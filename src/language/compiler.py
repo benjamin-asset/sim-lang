@@ -4,7 +4,7 @@ from typing import Any
 from anytree import Node, PostOrderIter
 
 from exception import *
-from language_definition import *
+from language.language_definition import *
 
 
 class CompileResult:

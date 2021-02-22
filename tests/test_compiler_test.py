@@ -1,17 +1,15 @@
-from compiler import Compiler, remove_indent, normalize
-from language_utils import import_module
+from language.compiler import Compiler, remove_indent, normalize
+from language.language_utils import import_module
 
 indicator = import_module('utils', 'indicator')
 function = import_module('utils', 'function')
 language = import_module('language_definition')
 
-import executor
-
 compiler = Compiler()
 
 
 # def test_execute():
-#     compiled_code = compiler.compile(
+#     compiled_code = compiler.language(
 #         """
 #         if momentum(close, 60) >= 0.1:
 #             if momentum(close, 60) >= 0.2:

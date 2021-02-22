@@ -1,7 +1,7 @@
 import unittest
 
 import exception
-from compiler import Compiler
+from language.compiler import Compiler
 
 
 class MyTestCase(unittest.TestCase):
