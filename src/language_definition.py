@@ -58,6 +58,9 @@ class Component:
     def __str__(self):
         return str(self.__dict__)
 
+    def __hash__(self):
+        return self.en_name.__hash__()
+
 
 class Param(Component):
     def __init__(self, en_name: str, kr_name: str):
@@ -84,16 +87,33 @@ class Function(Component):
 
 
 class Field(Component):
-    def __init__(self, en_name: str, kr_name: str):
+    def __init__(self, en_name: str, kr_name: str, db_prefix: str):
         super().__init__(en_name, kr_name)
+        self.db_prefix = db_prefix
+
+    def __hash__(self):
+        return super(Field, self).__hash__()
 
 
 field_list = [
-    Field('close', '종가'),
-    Field('high', '고가'),
-    Field('low', '저가'),
-    Field('log', '정해야함!!!!!!!!!!!!'),
-    Field('tr_val', '정해야함!!!!!!!!!!!!'),
+    Field('open', '시가', 'c'),
+    Field('high', '고가', 'c'),
+    Field('low', '저가', 'c'),
+    Field('close', '종가', 'c'),
+    Field('vol', '정해야함!!!!!!', 'c'),
+    Field('tr_val', '정해야함!!!!!!!!!!!!', 'c'),
+    Field('p_buy_vol', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('org_buy_vol', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('f_buy_vol', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('pen_buy_vol', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('f_buy_tr_val', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('org_buy_tr_val', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('p_buy_tr_val', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('pen_buy_tr_val', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('etc_buy_tr_val', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('etc_buy_vol', '정해야함!!!!!!!!!!!!', 'tt'),
+    Field('cap', '정해야함!!!!!!!!!!!!', 'ti'),
+    Field('shares_out', '정해야함!!!!!!!!!!!!', 'ti'),
 ]
 forbidden_function_list = ['open', 'id']
 forbidden_clause_list = [ast.Import, ast.With, ast.Return]

@@ -29,8 +29,11 @@ def __execute_term(code, df):
 def execute_term(source_code: str, stock_type: StockType, from_date: date, to_date: date):
     compile_result = compiler.compile(source_code)
 
-    sql = sql_builder.build(list(), from_date, to_date)
+    sql = sql_builder.build(compile_result.fields, from_date, to_date)
     rows = query(sql, Isolation.READ_COMMITTED)
+
+    if len(rows) == 0:
+        return None
 
     total_df = pd.DataFrame(rows)
     for item in compile_result.item_list:

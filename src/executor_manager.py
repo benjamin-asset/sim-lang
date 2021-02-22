@@ -38,7 +38,8 @@ def execute(source_code, stock_type: StockType, from_date: date, to_date: date):
         effective_from_date = from_date - timedelta(days=offset)
         effective_to_date = local_to_date + timedelta(days=offset)
         result = execute_term(source_code, stock_type, effective_from_date, effective_to_date)
-        result_list.append(result)
+        if result is not None:
+            result_list.append(result)
         from_date = local_to_date + timedelta(days=1)
 
     if len(result_list) == 1:
@@ -51,14 +52,12 @@ def execute(source_code, stock_type: StockType, from_date: date, to_date: date):
 
 if __name__ == '__main__':
     result = execute(
-        # """
         # ts_delay(increase_from_lowest_price(low, close, 3), 1) >= 0.125 and ts_delay(increase_from_lowest_price(low, close, 3), 2) >= 0.125 and decrease_from_highest_price(high, close, 3) < 0 and ibs(high, low, close) <= 0.25 and sma(close, 20) > ts_delay(sma(close, 20), 1) and sma(close, 10) > ts_delay(sma(close, 10), 1) and rank(sma(tr_val, 5)) > 0.8
-        # """,
         """
-        ts_delay(sma(close, 2), 1) > 10
+        ts_delay(increase_from_lowest_price(low, close, 3), 1) >= 0.125 and ts_delay(increase_from_lowest_price(low, close, 3), 2) >= 0.125
         """,
         StockType.ALL,
-        date(2019, 1, 1),
-        date(2019, 2, 1)
+        date(2014, 1, 1),
+        date(2015, 12, 31)
     )
     print(result)

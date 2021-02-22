@@ -93,6 +93,13 @@ class Compiler(ast.NodeTransformer):
         arg = ast.Constant(node.id, node.id)
         return to_field(arg)
 
+    def visit_BoolOp(self, node: ast.BoolOp) -> Any:
+        if isinstance(node.op, ast.And):
+            return to_and(self.generic_visit(node.values[0]), self.generic_visit(node.values[1]))
+        if isinstance(node.op, ast.Or):
+            return to_or(self.generic_visit(node.values[0]), self.generic_visit(node.values[1]))
+        raise Exception()
+
     def visit_If(self, node: ast.If) -> Any:
         if len(node.orelse) == 0:
             raise ElseIsNotDefinedException(node.end_lineno)
@@ -174,7 +181,7 @@ class Compiler(ast.NodeTransformer):
             for argument in node.args:
                 if isinstance(argument, ast.Name):
                     if argument.id in field_list:
-                        self.fields.add(argument.id)
+                        self.fields.add(field_list[field_list.index(argument.id)])
                         arg = ast.Constant(argument.id, argument.id)
 
                     else:
