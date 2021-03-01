@@ -1,10 +1,14 @@
 import io
+import time
+import logging
+
 from collections import deque
 from typing import Any
 from anytree import Node, PostOrderIter
 
 from exception import *
 from language.language_definition import *
+from language.constant import RESULT_COLUMN, PRIORITY_COLUMN, BUY_PRICE_COLUMN, SELL_PRICE_COLUMN
 
 
 class CompileResult:
@@ -13,10 +17,11 @@ class CompileResult:
             self.code = code
             self.is_rank = is_rank
 
-    def __init__(self, item_list: list, fields: set, max_ts_delay: int):
+    def __init__(self, item_list: list, fields: set, max_ts_delay: int, priority):
         self.item_list = item_list
         self.fields = fields
         self.max_ts_delay = max_ts_delay
+        self.priority = priority
 
 
 class Name(ast.Name):
@@ -55,8 +60,6 @@ class InnerFunction:
 
 
 class Compiler(ast.NodeTransformer):
-    RESULT_COLUMN = '#result'
-
     def __init__(self):
         self.reset()
 
@@ -210,11 +213,23 @@ class Compiler(ast.NodeTransformer):
         self.functions[inner_function.name] = inner_function
         return to_field(make_constant(inner_function.name))
 
-    def compile(self, source_code) -> CompileResult:
+    def compile(self, source_code: str, priority_code: str, buy_price_code: str, sell_price_code: str) -> CompileResult:
+        now = time.time()
         self.reset()
         source_code = remove_indent(source_code)
+        priority_code = remove_indent(priority_code)
+        buy_price_code = remove_indent(buy_price_code)
+        sell_price_code = remove_indent(sell_price_code)
+
         expression_tree = ast.parse(source_code)
+        priority_expression_tree = ast.parse(priority_code)
+        buy_price_expression_tree = ast.parse(buy_price_code)
+        sell_price_expression_tree = ast.parse(sell_price_code)
+
         self.generic_visit(expression_tree)
+        self.generic_visit(priority_expression_tree)
+        self.generic_visit(buy_price_expression_tree)
+        self.generic_visit(sell_price_expression_tree)
 
         result_item_list = list()
 
@@ -252,9 +267,20 @@ class Compiler(ast.NodeTransformer):
                 )
             )
 
-        expression_code = f"df['{Compiler.RESULT_COLUMN}'] = {ast.unparse(expression_tree)}"
+        expression_code = f"df['{RESULT_COLUMN}'] = {ast.unparse(expression_tree)}"
         result_item_list.append(CompileResult.Item(expression_code, False))
-        return CompileResult(result_item_list, self.fields, self.max_ts_delay)
+
+        priority_expression_code = f"df['{PRIORITY_COLUMN}'] = {ast.unparse(priority_expression_tree)}"
+        result_item_list.append(CompileResult.Item(priority_expression_code, False))
+
+        priority_expression_code = f"df['{BUY_PRICE_COLUMN}'] = {ast.unparse(buy_price_expression_tree)}"
+        result_item_list.append(CompileResult.Item(priority_expression_code, False))
+
+        priority_expression_code = f"df['{SELL_PRICE_COLUMN}'] = {ast.unparse(sell_price_expression_tree)}"
+        result_item_list.append(CompileResult.Item(priority_expression_code, False))
+
+        logging.debug('[Profiler] Compile time : {:0.3f}s'.format(time.time() - now))
+        return CompileResult(result_item_list, self.fields, self.max_ts_delay, priority_expression_code)
 
 
 def normalize(code):

@@ -23,7 +23,7 @@ def build(fields, from_date: date, to_date: date) -> str:
         table_sql += content
 
     return """
-    select c.date, c.ticker_id,
+    select c.date, c.ticker_id, c.high, c.low,
         {}
        ded.close usd,
        dey.close yen,
