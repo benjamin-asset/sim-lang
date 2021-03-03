@@ -11,7 +11,7 @@ from utils.parameter import Market
 
 indicator = import_module('utils', 'indicator')
 function = import_module('utils', 'function')
-language = import_module('language_definition')
+language = import_module('language', 'language_definition')
 
 
 class Item:
