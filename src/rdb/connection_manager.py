@@ -34,13 +34,13 @@ def query(sql: str, isolation_level=None):
     try:
         cursor = connection.cursor(pymysql.cursors.DictCursor)
         if isolation_level is not None:
-            cursor.execute(f"SET SESSION TRANSACTION ISOLATION LEVEL {isolation_level.value}")
+            cursor.calculate(f"SET SESSION TRANSACTION ISOLATION LEVEL {isolation_level.value}")
 
-        cursor.execute(sql)
+        cursor.calculate(sql)
         rows = cursor.fetchall()
 
         if isolation_level is not None:
-            cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ")
+            cursor.calculate("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ")
         logging.debug('[Profiler] DB Query : {:0.3f}s'.format(time.time() - start))
         return rows
     finally:

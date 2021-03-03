@@ -1,17 +1,9 @@
-from language.executor import execute_term
-import time
-import logging
 import copy
 import datetime
-import pandas as pd
-from language.language_utils import import_module
+
 from language.constant import RESULT_COLUMN, PRIORITY_COLUMN, BUY_PRICE_COLUMN, SELL_PRICE_COLUMN
 from utils.tools import get_bid_price, get_ask_price
 from utils.parameter import Market
-
-indicator = import_module('utils', 'indicator')
-function = import_module('utils', 'function')
-language = import_module('language', 'language_definition')
 
 
 class Item:
@@ -27,9 +19,9 @@ class Item:
             return False
 
         return self.ticker_id == other.ticker_id and \
-               self.buy_price == other.buy_price and \
-               self.sell_price and other.sell_price and \
-               self.quantity and other.quantity
+            self.buy_price == other.buy_price and \
+            self.sell_price and other.sell_price and \
+            self.quantity and other.quantity
 
     def __repr__(self):
         return str(self.__dict__)
@@ -49,8 +41,8 @@ class Stock:
             return False
 
         return self.ticker_id == other.ticker_id and \
-               self.price == other.price and \
-               self.quantity and other.quantity
+            self.price == other.price and \
+            self.quantity and other.quantity
 
     def __repr__(self):
         return str(self.__dict__)
@@ -75,69 +67,55 @@ class ResultItem:
         return str(self.__dict__)
 
 
-def __fun(code, df):
-    exec(compile(code, '', mode='exec'))
-    return df
-
-
-def execute(source_code: str, priority_code: str, buying_price_code: str, selling_price_code: str,
-            market: Market, from_date: datetime.date, to_date: datetime.date,
-            max_holding_stock_quantity: int, cash: int, min_stock_amount=0):
-    diff_date = to_date - from_date
-    # TODO: 계산식이 복잡하면 term 을 더 작게하여 잘게 쪼갤 수 있는 기능 구현하기
-    term = 365
-    offset = 30
-
-    origin_from_date = from_date
-    result_list = list()
-    extra = 0
-    if diff_date.days % term > 0 or diff_date.days == 0:
-        extra = 1
-    for i in range(int(diff_date.days / term) + extra):
-        local_to_date = from_date + datetime.timedelta(days=term - 1)
-        if to_date < local_to_date:
-            print('local_to_date is greater than to_date')
-            local_to_date = to_date
-
-        # 앞뒤로 여유 일수를 붙여줌
-        effective_from_date = from_date - datetime.timedelta(days=offset)
-        effective_to_date = local_to_date + datetime.timedelta(days=offset)
-        result = execute_term(source_code, priority_code, buying_price_code, selling_price_code,
-                              market, effective_from_date, effective_to_date)
-        if result is not None:
-            result_list.append(result)
-        from_date = local_to_date + datetime.timedelta(days=1)
-
-    if len(result_list) == 1:
-        combined_result = result_list[0]
-    else:
-        combined_result = pd.concat(result_list).drop_duplicates(subset=['date', 'ticker_id']).reset_index(drop=True)
-    execution_result = combined_result[combined_result['date'] >= origin_from_date]
-
-    buying_candidate_list = execution_result.loc[execution_result[RESULT_COLUMN]]
+def simulate(calculation_result, market: Market, max_holding_stock_quantity: int, cash: int, min_amount_per_stock):
+    '''
+    날짜단위로 돌며 매수/매도 시뮬레이션을 하는 함수
+    :param calculation_result: 시뮬레이팅 데이터
+    :param market: 장 (kospi, kosdaq)
+    :param max_holding_stock_quantity: 최대 보유 가능한 종목 수
+    :param cash: 보유 현금
+    :param min_amount_per_stock: 종목 당 최소 구매 금액
+    :return: 날짜별 매수/매도 리스트
+    '''
+    # 매수 가능 종목+일자만 추출
+    buying_candidate_list = calculation_result.loc[calculation_result[RESULT_COLUMN]]
     date_grouped_buying_candidate_list = buying_candidate_list.groupby(['date'])
-    date_grouped_execution_result = execution_result.groupby(['date'])
 
+    date_grouped_calculation_result = calculation_result.groupby(['date'])
+
+    # 매수 요청 리스트 : 반드시 매수된다는 보장은 없기 때문임
     buy_request_list = []
+
+    # 매도 요청 리스트 : 반드시 매도된다는 보장은 없기 때문임
     sell_request_list = []
+
+    # 보유 종목 리스트
     holding_stock_list = []
+
+    # 최종 결과
     final_result = []
 
-    for today, today_data in date_grouped_execution_result:
+    for today, today_data in date_grouped_calculation_result:
+        # 오늘 매수한 주식 리스트
         buying_stock_list = []
+
+        # 오늘 매도한 주식 리스트
         selling_stock_list = []
 
         if len(buy_request_list) > 0:
             # 매수 시도
             for item in buy_request_list:
                 target = today_data.loc[(today_data['ticker_id'] == item.ticker_id)]
+
+                # TODO: 상폐?
                 if len(target) == 0:
                     continue
 
+                # 보유 최대 종목 수를 초과할 경우
                 if len(holding_stock_list) >= max_holding_stock_quantity:
                     break
 
-                # 매수 성공
+                # 매수가보다 저가가 낮으므로 매수 성공
                 if target['low'].values[0] < item.buy_price:
                     cash -= item.buy_price * item.quantity
                     buying_stock_list.append(Stock(item.ticker_id, item.buy_price, item.quantity))
@@ -149,6 +127,8 @@ def execute(source_code: str, priority_code: str, buying_price_code: str, sellin
             # 매도 시도
             for item in sell_request_list:
                 target = today_data.loc[(today_data['ticker_id'] == item.ticker_id)]
+
+                # TODO: 상폐?
                 if len(target) == 0:
                     continue
 
@@ -161,16 +141,18 @@ def execute(source_code: str, priority_code: str, buying_price_code: str, sellin
             sell_request_list.clear()
 
         # 추가 매수 할 수 있음
-        if len(holding_stock_list) < max_holding_stock_quantity and cash >= min_stock_amount:
-            group = date_grouped_buying_candidate_list.get_group(today)
-            sorted_group = group.sort_values(by=[PRIORITY_COLUMN])
+        if len(holding_stock_list) < max_holding_stock_quantity and cash >= min_amount_per_stock:
+            candidate_group = date_grouped_buying_candidate_list.get_group(today)
+            sorted_group = candidate_group.sort_values(by=[PRIORITY_COLUMN])
 
-            count = len(holding_stock_list)
-            available_cash = cash / (max_holding_stock_quantity - count)
-            while available_cash < min_stock_amount:
-                count += 1
-                available_cash = cash / (max_holding_stock_quantity - count)
+            # 주식 당 매수 최소 금액을 넘기면서도 최대한 많은 종목을 살 수 있도록 종목 당 매수 금액을 조정
+            count = max_holding_stock_quantity - len(holding_stock_list)
+            available_cash = cash // count
+            while available_cash < min_amount_per_stock:
+                count -= 1
+                available_cash = cash // count
 
+            # 매수 시도 리스트에 종목 담기
             for el in sorted_group.iterrows():
                 buy_price = get_bid_price(el[1][BUY_PRICE_COLUMN], market)
 
@@ -182,10 +164,16 @@ def execute(source_code: str, priority_code: str, buying_price_code: str, sellin
                     quantity,
                     el[1]['close'] # 현재가를 종가로 기준잡음
                 )
+
+                # 이미 담겨있는 종목이거나, 이미 구매한 종목이라면 제외
                 if item in buy_request_list or item in holding_stock_list:
                     continue
 
                 buy_request_list.append(item)
+
+                count -= 1
+                if count == 0:
+                    break
 
         # 매도할(보유한) 주식이 있음
         if len(holding_stock_list) > 0:
@@ -210,41 +198,4 @@ def execute(source_code: str, priority_code: str, buying_price_code: str, sellin
         )
         final_result.append(today_result)
 
-    # date_grouped_buying_candidate_list 에서 매수 시
-
-    # 날짜별로 돌면서 매수/매도
-    # buying_candidate_list 는 날짜별 매수 가능 후보군
-    # 우선순위가 높은 애들을 max_holding_quantity 한도 내에서 (buying_price_code) 가격에 매수 신청 - 시뮬레이팅에서는 무조건 매수 되었다고 가정함
-    # 매도는 execution_result 를 돌면서 (selling_price_code) 가격에 매도 신청
-
     return final_result
-
-
-if __name__ == '__main__':
-    result = execute(
-        # ts_delay(increase_from_lowest_price(low, close, 3), 1) >= 0.125 and ts_delay(increase_from_lowest_price(low, close, 3), 2) >= 0.125 and decrease_from_highest_price(high, close, 3) < 0 and ibs(high, low, close) <= 0.25 and sma(close, 20) > ts_delay(sma(close, 20), 1) and sma(close, 10) > ts_delay(sma(close, 10), 1) and rank(sma(tr_val, 5)) > 0.8
-        """
-        ts_delay(increase_from_lowest_price(low, close, 3), 1) >= 0.125 and ts_delay(increase_from_lowest_price(low, close, 3), 2) >= 0.125
-        """,
-        """
-        ts_delay(increase_from_lowest_price(low, close, 3), 1) + ts_delay(increase_from_lowest_price(low, close, 3), 2)
-        """,
-        """
-        ts_delay(close, 1) * 0.98
-        """,
-        """
-        ts_delay(close, 1) * 1.02
-        """,
-        Market.kospi,
-        datetime.date(2017, 1, 1),
-        datetime.date(2017, 2, 1),
-        4,
-        2000000
-    )
-    for r in result:
-        print(r)
-
-
-def test(event, context):
-    print(event)
-    print(context)
