@@ -9,8 +9,6 @@ from language.constant import RESULT_COLUMN, PRIORITY_COLUMN, BUY_PRICE_COLUMN, 
 from utils.tools import get_bid_price, get_ask_price
 from utils.parameter import Market
 
-# indicator = import_module('utils', 'indicator')
-# function = import_module('utils', 'function')
 indicator = import_module('utils', 'indicator')
 function = import_module('utils', 'function')
 language = import_module('language_definition')
@@ -84,11 +82,7 @@ def __fun(code, df):
 
 def execute(source_code: str, priority_code: str, buying_price_code: str, selling_price_code: str,
             market: Market, from_date: datetime.date, to_date: datetime.date,
-            max_holding_stock_quantity: int, cash: int, max_amount_per_stock: int):
-    # TODO: 이건 더 생각해봐야함. 수익으로 인해 더 구매할 수도, 손해로 인해 구매 못할 수도 있음. 차라리 비율로서 입력받는게 좋을듯
-    if max_holding_stock_quantity * max_amount_per_stock > cash:
-        raise Exception()
-
+            max_holding_stock_quantity: int, cash: int, min_stock_amount=0):
     diff_date = to_date - from_date
     # TODO: 계산식이 복잡하면 term 을 더 작게하여 잘게 쪼갤 수 있는 기능 구현하기
     term = 365
@@ -128,7 +122,6 @@ def execute(source_code: str, priority_code: str, buying_price_code: str, sellin
     sell_request_list = []
     holding_stock_list = []
     final_result = []
-    current_cash = cash
 
     for today, today_data in date_grouped_execution_result:
         buying_stock_list = []
@@ -146,7 +139,7 @@ def execute(source_code: str, priority_code: str, buying_price_code: str, sellin
 
                 # 매수 성공
                 if target['low'].values[0] < item.buy_price:
-                    current_cash -= item.buy_price * item.quantity
+                    cash -= item.buy_price * item.quantity
                     buying_stock_list.append(Stock(item.ticker_id, item.buy_price, item.quantity))
                     holding_stock_list.append(item)
 
@@ -161,28 +154,37 @@ def execute(source_code: str, priority_code: str, buying_price_code: str, sellin
 
                 # 매도 성공
                 if target['high'].values[0] > item.sell_price:
-                    current_cash += item.sell_price * item.quantity
+                    cash += item.sell_price * item.quantity
                     selling_stock_list.append(Stock(item.ticker_id, item.sell_price, item.quantity))
                     holding_stock_list.remove(item)
 
             sell_request_list.clear()
 
         # 추가 매수 할 수 있음
-        if len(holding_stock_list) < max_holding_stock_quantity:
+        if len(holding_stock_list) < max_holding_stock_quantity and cash >= min_stock_amount:
             group = date_grouped_buying_candidate_list.get_group(today)
-            top_n = group.sort_values(by=[PRIORITY_COLUMN])
-            for el in top_n.iterrows():
-                buy_price = el[1][BUY_PRICE_COLUMN]
-                quantity = int(max_amount_per_stock / buy_price)
+            sorted_group = group.sort_values(by=[PRIORITY_COLUMN])
+
+            count = len(holding_stock_list)
+            available_cash = cash / (max_holding_stock_quantity - count)
+            while available_cash < min_stock_amount:
+                count += 1
+                available_cash = cash / (max_holding_stock_quantity - count)
+
+            for el in sorted_group.iterrows():
+                buy_price = get_bid_price(el[1][BUY_PRICE_COLUMN], market)
+
+                quantity = int(available_cash // buy_price)
                 item = Item(
                     el[1]['ticker_id'],
-                    get_bid_price(buy_price, market),
+                    buy_price,
                     get_ask_price(el[1][SELL_PRICE_COLUMN], market),
                     quantity,
                     el[1]['close'] # 현재가를 종가로 기준잡음
                 )
                 if item in buy_request_list or item in holding_stock_list:
                     continue
+
                 buy_request_list.append(item)
 
         # 매도할(보유한) 주식이 있음
@@ -194,16 +196,14 @@ def execute(source_code: str, priority_code: str, buying_price_code: str, sellin
                     continue
 
                 # 현재가 조정
-                print(f'{item.ticker_id} before = {item.current_price}')
                 item.current_price = target['close'].values[0]
-                print(f'{item.ticker_id} after = {item.current_price}')
 
                 if target[SELL_PRICE_COLUMN].values[0] > item.sell_price:
                     sell_request_list.append(item)
 
         today_result = ResultItem(
             today,
-            current_cash,
+            cash,
             copy.deepcopy(holding_stock_list),
             buying_stock_list,
             selling_stock_list
@@ -239,8 +239,7 @@ if __name__ == '__main__':
         datetime.date(2017, 1, 1),
         datetime.date(2017, 2, 1),
         4,
-        2000000,
-        500000
+        2000000
     )
     for r in result:
         print(r)
