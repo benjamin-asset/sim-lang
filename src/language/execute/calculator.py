@@ -35,4 +35,24 @@ def calculate(source_code: str, priority_code: str, buying_price_code: str, sell
         combined_result = result_list[0]
     else:
         combined_result = pd.concat(result_list).drop_duplicates(subset=['date', 'ticker_id']).reset_index(drop=True)
-    return combined_result[combined_result['date'] >= origin_from_date]
+    return combined_result[(combined_result['date'] >= origin_from_date) & (combined_result['date'] <= to_date)]
+
+
+if __name__ == '__main__':
+    calculate(
+        """
+        (ts_delay(increase_from_lowest_price(low, close, 3), 1) >= 0.1 or ts_delay(increase_from_lowest_price(low, close, 3), 2) >= 0.1) and decrease_from_highest_price(high, close, 3) < 0 and decrease_from_highest_price(high, close, 3) > -0.1 and ibs(high, low, close) < 0.25 and rank(sma(tr_val, 5)) > 0.8
+        """,
+        """
+        increase_from_lowest_price(low, close, 3)
+        """,
+        """
+        ts_delay(close, 1) * 0.98
+        """,
+        """
+        ts_delay(close, 1) * 1.02
+        """,
+        Market.kospi,
+        datetime.date(2017, 1, 1),
+        datetime.date(2017, 12, 31)
+    )

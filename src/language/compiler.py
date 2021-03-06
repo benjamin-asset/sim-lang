@@ -98,9 +98,9 @@ class Compiler(ast.NodeTransformer):
 
     def visit_BoolOp(self, node: ast.BoolOp) -> Any:
         if isinstance(node.op, ast.And):
-            return to_and(self.generic_visit(node.values[0]), self.generic_visit(node.values[1]))
+            return to_and(self.visit(node.values[0]), self.visit(node.values[1]))
         if isinstance(node.op, ast.Or):
-            return to_or(self.generic_visit(node.values[0]), self.generic_visit(node.values[1]))
+            return to_or(self.visit(node.values[0]), self.visit(node.values[1]))
         raise Exception()
 
     def visit_If(self, node: ast.If) -> Any:
@@ -110,7 +110,7 @@ class Compiler(ast.NodeTransformer):
         item = node.body[0]
         else_item = node.orelse[0]
 
-        test = self.generic_visit(node.test)
+        test = self.visit(node.test)
         not_test = to_not(test)
 
         if isinstance(else_item, ast.If):
@@ -126,7 +126,7 @@ class Compiler(ast.NodeTransformer):
             else_result = ast.copy_location(
                 to_and(
                     value,
-                    self.generic_visit(else_item.value)
+                    self.visit(else_item.value)
                 ),
                 node
             )
@@ -140,7 +140,7 @@ class Compiler(ast.NodeTransformer):
             node = ast.copy_location(
                 to_or(
                     ast.copy_location(
-                        to_and(value, self.generic_visit(item.value)),
+                        to_and(value, self.visit(item.value)),
                         node
                     ),
                     else_result
@@ -226,10 +226,10 @@ class Compiler(ast.NodeTransformer):
         buy_price_expression_tree = ast.parse(buy_price_code)
         sell_price_expression_tree = ast.parse(sell_price_code)
 
-        self.generic_visit(expression_tree)
-        self.generic_visit(priority_expression_tree)
-        self.generic_visit(buy_price_expression_tree)
-        self.generic_visit(sell_price_expression_tree)
+        self.visit(expression_tree)
+        self.visit(priority_expression_tree)
+        self.visit(buy_price_expression_tree)
+        self.visit(sell_price_expression_tree)
 
         result_item_list = list()
 
