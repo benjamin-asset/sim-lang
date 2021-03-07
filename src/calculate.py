@@ -35,19 +35,17 @@ def test_basic():
         to_date
     )
 
-    print('result time : {:.3f}s'.format(time.time() - now))
-    result = to_test_format(result, from_date, to_date)
-
-    now = time.time()
     test_result = run(from_date, to_date)
-    test_result = to_test_format(test_result, from_date, to_date)
-    print('test result time : {:.3f}s'.format(time.time() - now))
+    assert check(result, test_result, from_date, to_date)
 
-    result = result.to_dict()
-    test_result = test_result.to_dict()
-    print(f'result : {len(result["#priority"])}')
-    print(f'test result : {len(test_result["#priority"])}')
-    assert result == test_result
+
+def check(lhs, rhs, from_date, to_date):
+    lhs = to_test_format(lhs, from_date, to_date)
+    rhs = to_test_format(rhs, from_date, to_date)
+
+    lhs = lhs.to_dict()
+    rhs = rhs.to_dict()
+    return lhs == rhs
 
 
 def to_test_format(df, from_date: datetime.date, to_date: datetime.date):
