@@ -96,10 +96,23 @@ class Compiler(ast.NodeTransformer):
         arg = ast.Constant(node.id, node.id)
         return to_field(arg)
 
+    def visit_Subscript(self, node: ast.Subscript) -> Any:
+        return node
+
     def visit_BoolOp(self, node: ast.BoolOp) -> Any:
         if isinstance(node.op, ast.And):
+            while len(node.values) > 2:
+                last = node.values.pop(0)
+                prev = node.values.pop(0)
+                new_node = to_and(self.visit(last), self.visit(prev))
+                node.values.insert(0, new_node)
             return to_and(self.visit(node.values[0]), self.visit(node.values[1]))
         if isinstance(node.op, ast.Or):
+            while len(node.values) > 2:
+                last = node.values.pop()
+                prev = node.values.pop()
+                new_node = to_or(self.visit(last), self.visit(prev))
+                node.values.append(new_node)
             return to_or(self.visit(node.values[0]), self.visit(node.values[1]))
         raise Exception()
 
