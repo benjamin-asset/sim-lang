@@ -1,22 +1,21 @@
-from language.compiler import Compiler
 from language.language_utils import import_module
 import language.execute.calculator as calculator
 
 import datetime
+import time
 from utils.parameter import Market
 
 Indicator = import_module('utils', 'indicator')
 Function = import_module('utils', 'function')
 
-compiler = Compiler()
 
-
-def test_simplest_code():
-    from tests.test_code.basic import run
+def test_basic():
+    from test.test_code.calculate.basic import run
 
     from_date = datetime.date(2017, 1, 1)
     to_date = datetime.date(2017, 12, 31)
 
+    now = time.time()
     result = calculator.calculate(
         """
         (ts_delay(increase_from_lowest_price(low, close, 3), 1) >= 0.1 or ts_delay(increase_from_lowest_price(low, close, 3), 2) >= 0.1) and decrease_from_highest_price(high, close, 3) < 0 and decrease_from_highest_price(high, close, 3) > -0.1 and ibs(high, low, close) < 0.25 and rank(sma(tr_val, 5)) > 0.8
@@ -35,10 +34,16 @@ def test_simplest_code():
         to_date
     )
 
+    print('result time : {:.3f}s'.format(time.time() - now))
     result = to_test_format(result, from_date, to_date)
-    test_result = to_test_format(run(), from_date, to_date)
-    print(f'result = {result}')
-    print(f'test_result = {test_result}')
+
+    now = time.time()
+    test_result = run(from_date, to_date)
+    test_result = to_test_format(test_result, from_date, to_date)
+    print('test result time : {:.3f}s'.format(time.time() - now))
+
+    result = result.to_dict()
+    test_result = test_result.to_dict()
     assert result == test_result
 
 

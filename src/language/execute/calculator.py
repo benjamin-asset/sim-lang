@@ -2,13 +2,18 @@ import language.execute.calculating_unit as calculator
 import datetime
 import pandas as pd
 from utils.parameter import Market
+import logging
+
+
+TAG = '[Calculator]'
 
 
 def calculate(source_code: str, priority_code: str, buying_price_code: str, selling_price_code: str,
               market: Market, from_date: datetime.date, to_date: datetime.date):
+    logging.debug(f'{TAG} Start calculate start_date = {from_date}, end_date = {to_date}')
     diff_date = to_date - from_date
     # TODO: 계산식이 복잡하면 term 을 더 작게하여 잘게 쪼갤 수 있는 기능 구현하기
-    term = 365
+    term = 500
     offset = 30
 
     origin_from_date = from_date

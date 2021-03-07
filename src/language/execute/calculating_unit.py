@@ -9,6 +9,8 @@ from datetime import date
 from language.compiler import Compiler
 from rdb import sql_builder
 
+from utils.executor import Executor
+from utils.generator import Generator
 from utils.parameter import Market
 
 load_dotenv()
@@ -16,6 +18,8 @@ load_dotenv()
 indicator = import_module('utils', 'indicator')
 function = import_module('utils', 'function')
 language = import_module('language', 'language_definition')
+
+TAG = '[CalculateUnit]'
 
 
 def __calculate(code, df):
@@ -25,11 +29,15 @@ def __calculate(code, df):
 
 def calculate(source_code: str, priority_code: str, buy_price_code: str, sell_price_code: str,
               market: Market, from_date: date, to_date: date):
+    logging.debug(f'{TAG} Start calculate start_date = {from_date}, end_date = {to_date}')
     compiler = Compiler()
     compile_result = compiler.compile(source_code, priority_code, buy_price_code, sell_price_code)
 
     sql = sql_builder.build(compile_result.fields, from_date, to_date)
     rows = query(sql, Isolation.READ_COMMITTED)
+
+    # executor = Executor("")
+    # generator = Generator(executor)
 
     if len(rows) == 0:
         return None
@@ -49,5 +57,5 @@ def calculate(source_code: str, priority_code: str, buy_price_code: str, sell_pr
         for column in different_columns:
             total_df.insert(0, column, y[column])
 
-    logging.debug('[Profile] execute time : {:0.3f}s'.format(time.time() - now))
+    logging.debug('{} execute time : {:0.3f}s'.format(TAG, time.time() - now))
     return total_df

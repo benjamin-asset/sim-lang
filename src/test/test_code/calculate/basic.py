@@ -18,9 +18,7 @@ def add_data_to_day_price(day_price: DataFrame, index_day_price: DataFrame) -> D
         group['sma_tr_val_5'] = sma(group['tr_val'], 5)
         group['ibs'] = ibs(group['high'], group['low'], group['close'])
         group['increase_ratio_3'] = increase_from_lowest_price(group['low'], group['close'], 3)
-        group['decrease_ratio_5'] = decrease_from_highest_price(group['high'], group['close'], 5)
         group['decrease_ratio_3'] = decrease_from_highest_price(group['high'], group['close'], 3)
-        group['pivot_standard'] = pivot_standard(group['high'], group['low'], group['close'])
         group_list.append(group)
     day_price = pd.concat(group_list, axis=0)
     day_price = day_price.reset_index(drop=True)
@@ -40,7 +38,7 @@ def add_data_to_day_price(day_price: DataFrame, index_day_price: DataFrame) -> D
         increase_condition1 = (group['increase_ratio_3'].shift(1) >= 0.1) | \
                               (group['increase_ratio_3'].shift(2) >= 0.1)
         increase_condition = increase_condition1
-        decrease_condition1 = (group['decrease_ratio_3'] < 0) & (group['decrease_ratio_3'].abs() < 0.1)
+        decrease_condition1 = (group['decrease_ratio_3'] < 0) & (group['decrease_ratio_3'] > -0.1)
         decrease_condition2 = group['ibs'] < 0.25
         decrease_condition = decrease_condition1 & decrease_condition2
         liquidity_condition1 = group['rank_tr_val_5'] > 0.8
@@ -93,8 +91,7 @@ def back_test(generator, start_date, end_date):
     return day_price
 
 
-def run():
-    executor = Executor(
-        "")
+def run(from_date: datetime.date, to_date: datetime.date):
+    executor = Executor("")
     ge = Generator(executor)
-    return back_test(ge, date(2017, 1, 1), date(2017, 12, 31))
+    return back_test(ge, from_date, to_date)
