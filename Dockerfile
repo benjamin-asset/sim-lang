@@ -1,5 +1,5 @@
 # Define global args
-ARG FUNCTION_DIR="/app/"
+ARG FUNCTION_DIR="/home/app/"
 ARG RUNTIME_VERSION="3.9"
 ARG DISTRO_VERSION="3.12"
 

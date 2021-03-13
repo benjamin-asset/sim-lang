@@ -56,5 +56,5 @@ a = id(open)
         self.assertRaises(exception.CallForbiddenFunctionException, lambda: compiler.compile())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     unittest.main()

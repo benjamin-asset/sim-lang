@@ -27,14 +27,14 @@ class CompileResult:
 class Name(ast.Name):
     def __init__(self, identifier_id, expr_context_ctx=ast.Load()):
         super().__init__(identifier_id, expr_context_ctx)
-        ast.Name.__setattr__(self, "id", identifier_id)
+        ast.Name.__setattr__(self, 'id', identifier_id)
 
 
 class Attribute(ast.Attribute):
     def __init__(self, expr_value, identifier_attr, expr_context_ctx=ast.Load()):
         super().__init__(expr_value, identifier_attr, expr_context_ctx)
-        ast.Attribute.__setattr__(self, "attr", identifier_attr)
-        ast.Attribute.__setattr__(self, "value", expr_value)
+        ast.Attribute.__setattr__(self, 'attr', identifier_attr)
+        ast.Attribute.__setattr__(self, 'value', expr_value)
 
 
 class Call(ast.Call):
@@ -82,9 +82,15 @@ class Compiler(ast.NodeTransformer):
             return self.expression_stack[0]
 
         if index + 2 == len(self.expression_stack):
-            return ast.copy_location(to_and(self.expression_stack[index], self.expression_stack[index + 1]), node)
+            return ast.copy_location(
+                to_and(self.expression_stack[index], self.expression_stack[index + 1]),
+                node
+            )
 
-        return ast.copy_location(to_and(self.expression_stack[index], self.get_bool_op(node, index + 1)), node)
+        return ast.copy_location(
+            to_and(self.expression_stack[index], self.get_bool_op(node, index + 1)),
+            node
+        )
 
     def visit_Name(self, node: Name) -> Any:
         arg = ast.Constant(node.id, node.id)
@@ -117,7 +123,13 @@ class Compiler(ast.NodeTransformer):
                 value = not_test
             else:
                 value = to_and(function_stack_data, not_test)
-            else_result = ast.copy_location(to_and(value, self.visit(else_item.value)), node)
+            else_result = ast.copy_location(
+                to_and(
+                    value,
+                    self.visit(else_item.value)
+                ),
+                node
+            )
 
         if isinstance(item, ast.Expr):
             function_stack_data = self.get_bool_op(node)
@@ -126,7 +138,14 @@ class Compiler(ast.NodeTransformer):
             else:
                 value = to_and(function_stack_data, test)
             node = ast.copy_location(
-                to_or(ast.copy_location(to_and(value, self.visit(item.value)), node), else_result), node
+                to_or(
+                    ast.copy_location(
+                        to_and(value, self.visit(item.value)),
+                        node
+                    ),
+                    else_result
+                ),
+                node
             )
 
         elif isinstance(item, ast.If):
@@ -134,7 +153,10 @@ class Compiler(ast.NodeTransformer):
             result = self.visit_If(item)
             self.expression_stack.popleft()
 
-            node = ast.copy_location(to_or(result, else_result), node)
+            node = ast.copy_location(
+                to_or(result, else_result),
+                node
+            )
 
         else:
             raise Exception()
@@ -150,7 +172,7 @@ class Compiler(ast.NodeTransformer):
 
         is_rank = False
         # 랭크함수가 있는지 확인
-        if function_name == "rank":
+        if function_name == 'rank':
             is_rank = True
 
         parent_dependency_node = Node(function_name, self.function_dependency_stack[0])
@@ -179,7 +201,7 @@ class Compiler(ast.NodeTransformer):
                 elif isinstance(argument, ast.Call):
                     args.append(self.visit_Call(argument))
 
-            if fun.en_name == "ts_delay" and self.max_ts_delay < node.args[1].value:
+            if fun.en_name == 'ts_delay' and self.max_ts_delay < node.args[1].value:
                 self.max_ts_delay = node.args[1].value
             node = make_function_call(fun.module, fun.en_name, args, node)
         else:
@@ -191,9 +213,7 @@ class Compiler(ast.NodeTransformer):
         self.functions[inner_function.name] = inner_function
         return to_field(make_constant(inner_function.name))
 
-    def compile(
-        self, source_code: str, priority_code: str, buy_price_code: str, sell_price_code: str
-    ) -> CompileResult:
+    def compile(self, source_code: str, priority_code: str, buy_price_code: str, sell_price_code: str) -> CompileResult:
         now = time.time()
         self.reset()
         source_code = remove_indent(source_code)
@@ -217,9 +237,12 @@ class Compiler(ast.NodeTransformer):
         body = list()
         cur_is_rank = False
         for index, node in enumerate(PostOrderIter(self.function_dependency_tree)):
-            if node.name == "root":
+            if node.name == 'root':
                 if len(body) > 0:
-                    function_tree = ast.Module(body=body, type_ignores=[])
+                    function_tree = ast.Module(
+                        body=body,
+                        type_ignores=[]
+                    )
                     function_code = ast.unparse(function_tree)
                     result_item_list.append(CompileResult.Item(function_code, cur_is_rank))
                 break
@@ -227,13 +250,22 @@ class Compiler(ast.NodeTransformer):
             function = self.functions[node.name]
             if function.is_rank != cur_is_rank:
                 if len(body) > 0:
-                    function_tree = ast.Module(body=body, type_ignores=[])
+                    function_tree = ast.Module(
+                        body=body,
+                        type_ignores=[]
+                    )
                     function_code = ast.unparse(function_tree)
                     result_item_list.append(CompileResult.Item(function_code, cur_is_rank))
                     body = list()
 
             cur_is_rank = function.is_rank
-            body.append(ast.Assign(targets=[to_field(make_constant(node.name))], value=function.node, lineno=index))
+            body.append(
+                ast.Assign(
+                    targets=[to_field(make_constant(node.name))],
+                    value=function.node,
+                    lineno=index
+                )
+            )
 
         expression_code = f"df['{RESULT_COLUMN}'] = {ast.unparse(expression_tree)}"
         result_item_list.append(CompileResult.Item(expression_code, False))
@@ -247,7 +279,7 @@ class Compiler(ast.NodeTransformer):
         priority_expression_code = f"df['{SELL_PRICE_COLUMN}'] = {ast.unparse(sell_price_expression_tree)}"
         result_item_list.append(CompileResult.Item(priority_expression_code, False))
 
-        logging.debug("[Profiler] Compile time : {:0.3f}s".format(time.time() - now))
+        logging.debug('[Profiler] Compile time : {:0.3f}s'.format(time.time() - now))
         return CompileResult(result_item_list, self.fields, self.max_ts_delay, priority_expression_code)
 
 
@@ -260,14 +292,14 @@ def remove_indent(source_code):
     count = 0
     indent_type = 0
     for c in source_code:
-        if c == "\n":
+        if c == '\n':
             continue
-        elif c == " ":
+        elif c == ' ':
             count += 1
             if count == 4:
                 indent += 1
                 count = 0
-        elif c == "\t":
+        elif c == '\t':
             indent_type = 1
             indent += 1
         else:
@@ -276,7 +308,7 @@ def remove_indent(source_code):
     if indent > 0:
         buf = io.StringIO(source_code)
         lines = buf.readlines()
-        source_code = ""
+        source_code = ''
         if indent_type == 0:
             indent = indent * 4
 
@@ -289,14 +321,28 @@ def remove_indent(source_code):
 
 
 def to_field(variable: ast.Constant, ctx=ast.Load()):
-    return ast.Subscript(ast.Name("df", ast.Load()), variable, ctx)
+    return ast.Subscript(
+        ast.Name(
+            'df',
+            ast.Load()
+        ),
+        variable,
+        ctx
+    )
 
 
 def make_function_call(module_name: str, function_name: str, arguments: [ast.AST], node: ast.Call):
     clazz = ast.copy_location(Name(module_name), node)
     function = ast.copy_location(Attribute(clazz, function_name), node)
     return ast.copy_location(
-        ast.Call(expr_func=function, expr=function, func=function, args=arguments, keywords=[]), node
+        ast.Call(
+            expr_func=function,
+            expr=function,
+            func=function,
+            args=arguments,
+            keywords=[]
+        ),
+        node
     )
 
 
@@ -317,19 +363,30 @@ def call_to_name(node: ast.Call):
             args.append(str(arg.value))
 
     if isinstance(node.func, ast.Attribute):
-        function_id = f"{node.func.value.id}_{node.func.attr}"
+        function_id = f'{node.func.value.id}_{node.func.attr}'
     else:
         function_id = node.func.id
     return f'#{function_id}_{"_".join(args)}'
 
 
 def to_not(test):
-    return ast.UnaryOp(ast.Invert(), test)
+    return ast.UnaryOp(
+        ast.Invert(),
+        test
+    )
 
 
 def to_and(left, right):
-    return ast.BinOp(left, ast.BitAnd(), right)
+    return ast.BinOp(
+        left,
+        ast.BitAnd(),
+        right
+    )
 
 
 def to_or(left, right):
-    return ast.BinOp(left, ast.BitOr(), right)
+    return ast.BinOp(
+        left,
+        ast.BitOr(),
+        right
+    )
