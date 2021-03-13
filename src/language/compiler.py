@@ -9,6 +9,7 @@ from anytree import Node, PostOrderIter
 from exception import *
 from language.language_definition import *
 from language.constant import RESULT_COLUMN, PRIORITY_COLUMN, BUY_PRICE_COLUMN, SELL_PRICE_COLUMN
+from utils.parameter import Field
 
 
 class CompileResult:
@@ -194,8 +195,8 @@ class Compiler(ast.NodeTransformer):
             args = list()
             for argument in node.args:
                 if isinstance(argument, ast.Name):
-                    if argument.id in field_list:
-                        self.fields.add(field_list[field_list.index(argument.id)])
+                    if argument.id in Field.__members__:
+                        self.fields.add(Field.__members__[argument.id])
                         arg = ast.Constant(argument.id, argument.id)
 
                     else:
@@ -278,7 +279,7 @@ class Compiler(ast.NodeTransformer):
                 )
             )
 
-        expression_code = f"df['{RESULT_COLUMN}'] = {ast.unparse(expression_tree)}"
+        expression_code = f"df['{RESULT_COLUMN}'] = df['is_active'] & ({ast.unparse(expression_tree)})"
         result_item_list.append(CompileResult.Item(expression_code, False))
 
         priority_expression_code = f"df['{PRIORITY_COLUMN}'] = {ast.unparse(priority_expression_tree)}"

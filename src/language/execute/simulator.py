@@ -132,6 +132,10 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
                 if len(target) == 0:
                     continue
 
+                # 거래 정지
+                if not target['is_active']:
+                    continue
+
                 # 매도 성공
                 if target['high'].values[0] > item.sell_price:
                     cash += item.sell_price * item.quantity
