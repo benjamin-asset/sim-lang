@@ -1,0 +1,21 @@
+version: "3"
+services:
+  sim:
+    image: sim:latest
+    build:
+      context: .
+      args:
+        FUNCTION_DIR: /app/
+    env_file:
+      - .env
+    ports:
+      - "9000:8080"
+
+  dynamodb:
+    image: amazon/dynamodb-local
+    volumes:
+      - "dynamodb-data:/home/dynamodblocal/data"
+
+
+volumes:
+  dynamodb-data:
