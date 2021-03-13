@@ -1,0 +1,26 @@
+service: sim-framework
+frameworkVersion: '2'
+useDotenv: true
+
+provider:
+  lambdaHashingVersion: 20201221
+  name: aws
+  stage: ${opt:stage, 'prod'} # Set the default stage used. Default is dev
+  region: ${opt:region, 'ap-northeast-2'}
+  timeout: 900
+  memorySize: 512
+  logRetentionInDays: 14
+  environment:
+    ENV: ${opt:stage, 'prod'}
+  iam:
+    role:
+      managedPolicies:
+        - arn:aws:iam::924814158042:policy/ParameterStoreRead
+  ecr:
+    images:
+      appimage:
+        path: ./
+functions:
+  hello:
+    image:
+      name: appimage

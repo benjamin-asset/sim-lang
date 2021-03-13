@@ -5,8 +5,8 @@ import language.execute.calculator as calculator
 import datetime
 from utils.parameter import Market
 
-Indicator = import_module('utils', 'indicator')
-Function = import_module('utils', 'function')
+Indicator = import_module("utils", "indicator")
+Function = import_module("utils", "function")
 
 compiler = Compiler()
 
@@ -32,19 +32,19 @@ def test_simplest_code():
         """,
         Market.kospi,
         from_date,
-        to_date
+        to_date,
     )
 
     result = to_test_format(result, from_date, to_date)
     test_result = to_test_format(run(), from_date, to_date)
-    print(f'result = {result}')
-    print(f'test_result = {test_result}')
+    print(f"result = {result}")
+    print(f"test_result = {test_result}")
     assert result == test_result
 
 
 def to_test_format(df, from_date: datetime.date, to_date: datetime.date):
-    result = df.loc[df['#result']]
-    sorted_result = result.sort_values(by=['date', '#priority', 'open', 'close'])
-    subset = sorted_result[['date', 'ticker_id', '#priority']]
-    subset = subset[(subset['date'] >= from_date) & (subset['date'] <= to_date)]
+    result = df.loc[df["#result"]]
+    sorted_result = result.sort_values(by=["date", "#priority", "open", "close"])
+    subset = sorted_result[["date", "ticker_id", "#priority"]]
+    subset = subset[(subset["date"] >= from_date) & (subset["date"] <= to_date)]
     return subset

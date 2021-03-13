@@ -5,7 +5,7 @@ from enum import Enum
 import time
 import logging
 
-logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+logging.basicConfig(format="%(levelname)s:%(message)s", level=logging.DEBUG)
 
 
 class Isolation(Enum):
@@ -15,7 +15,7 @@ class Isolation(Enum):
 
 
 def get_connection():
-    database_url = os.getenv('DATABASE_URL')
+    database_url = os.getenv("DATABASE_URL")
     result = urlparse(database_url)
 
     return pymysql.connect(
@@ -23,8 +23,8 @@ def get_connection():
         port=result.port,
         user=result.username,
         password=result.password,
-        db=result.path[1:] if result.path else '',
-        charset='utf8'
+        db=result.path[1:] if result.path else "",
+        charset="utf8",
     )
 
 
@@ -41,7 +41,7 @@ def query(sql: str, isolation_level=None):
 
         if isolation_level is not None:
             cursor.execute("SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ")
-        logging.debug('[Profiler] DB Query : {:0.3f}s'.format(time.time() - start))
+        logging.debug("[Profiler] DB Query : {:0.3f}s".format(time.time() - start))
         return rows
     finally:
         connection.close()

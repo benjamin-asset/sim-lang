@@ -1,9 +1,9 @@
 from language.compiler import Compiler, remove_indent, normalize
 from language.language_utils import import_module
 
-indicator = import_module('utils', 'indicator')
-function = import_module('utils', 'function')
-language = import_module('language_definition')
+indicator = import_module("utils", "indicator")
+function = import_module("utils", "function")
+language = import_module("language_definition")
 
 compiler = Compiler()
 
@@ -37,7 +37,7 @@ def test_simplest_code():
             """
         )
     )
-    assert (compiled_code == target_code)
+    assert compiled_code == target_code
 
 
 def test_if():
@@ -61,4 +61,4 @@ def test_if():
     )
     print(compiled_code)
     print(target_code)
-    assert (compiled_code == target_code)
+    assert compiled_code == target_code

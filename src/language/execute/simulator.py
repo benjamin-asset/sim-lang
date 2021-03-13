@@ -18,10 +18,14 @@ class Item:
         if not isinstance(other, Item):
             return False
 
-        return self.ticker_id == other.ticker_id and \
-            self.buy_price == other.buy_price and \
-            self.sell_price and other.sell_price and \
-            self.quantity and other.quantity
+        return (
+            self.ticker_id == other.ticker_id
+            and self.buy_price == other.buy_price
+            and self.sell_price
+            and other.sell_price
+            and self.quantity
+            and other.quantity
+        )
 
     def __repr__(self):
         return str(self.__dict__)
@@ -40,9 +44,7 @@ class Stock:
         if not isinstance(other, Item):
             return False
 
-        return self.ticker_id == other.ticker_id and \
-            self.price == other.price and \
-            self.quantity and other.quantity
+        return self.ticker_id == other.ticker_id and self.price == other.price and self.quantity and other.quantity
 
     def __repr__(self):
         return str(self.__dict__)
@@ -52,8 +54,14 @@ class Stock:
 
 
 class ResultItem:
-    def __init__(self, date: datetime.date, cash: int, holding_stock_list: list, buying_stock_list: list,
-                 selling_stock_list: list):
+    def __init__(
+        self,
+        date: datetime.date,
+        cash: int,
+        holding_stock_list: list,
+        buying_stock_list: list,
+        selling_stock_list: list,
+    ):
         self.date = date
         self.cash = cash
         self.holding_stock_list = holding_stock_list
@@ -68,7 +76,7 @@ class ResultItem:
 
 
 def simulate(calculation_result, market: Market, max_holding_stock_quantity: int, cash: int, min_amount_per_stock):
-    '''
+    """
     날짜단위로 돌며 매수/매도 시뮬레이션을 하는 함수
     :param calculation_result: 시뮬레이팅 데이터
     :param market: 장 (kospi, kosdaq)
@@ -76,12 +84,12 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
     :param cash: 보유 현금
     :param min_amount_per_stock: 종목 당 최소 구매 금액
     :return: 날짜별 매수/매도 리스트
-    '''
+    """
     # 매수 가능 종목+일자만 추출
     buying_candidate_list = calculation_result.loc[calculation_result[RESULT_COLUMN]]
-    date_grouped_buying_candidate_list = buying_candidate_list.groupby(['date'])
+    date_grouped_buying_candidate_list = buying_candidate_list.groupby(["date"])
 
-    date_grouped_calculation_result = calculation_result.groupby(['date'])
+    date_grouped_calculation_result = calculation_result.groupby(["date"])
 
     # 매수 요청 리스트 : 반드시 매수된다는 보장은 없기 때문임
     buy_request_list = []
@@ -105,7 +113,7 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
         if len(buy_request_list) > 0:
             # 매수 시도
             for item in buy_request_list:
-                target = today_data.loc[(today_data['ticker_id'] == item.ticker_id)]
+                target = today_data.loc[(today_data["ticker_id"] == item.ticker_id)]
 
                 # TODO: 상폐?
                 if len(target) == 0:
@@ -116,7 +124,7 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
                     break
 
                 # 매수가보다 저가가 낮으므로 매수 성공
-                if target['low'].values[0] < item.buy_price:
+                if target["low"].values[0] < item.buy_price:
                     cash -= item.buy_price * item.quantity
                     buying_stock_list.append(Stock(item.ticker_id, item.buy_price, item.quantity))
                     holding_stock_list.append(item)
@@ -126,14 +134,14 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
         if len(sell_request_list) > 0:
             # 매도 시도
             for item in sell_request_list:
-                target = today_data.loc[(today_data['ticker_id'] == item.ticker_id)]
+                target = today_data.loc[(today_data["ticker_id"] == item.ticker_id)]
 
                 # TODO: 상폐?
                 if len(target) == 0:
                     continue
 
                 # 매도 성공
-                if target['high'].values[0] > item.sell_price:
+                if target["high"].values[0] > item.sell_price:
                     cash += item.sell_price * item.quantity
                     selling_stock_list.append(Stock(item.ticker_id, item.sell_price, item.quantity))
                     holding_stock_list.remove(item)
@@ -158,11 +166,11 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
 
                 quantity = int(available_cash // buy_price)
                 item = Item(
-                    el[1]['ticker_id'],
+                    el[1]["ticker_id"],
                     buy_price,
                     get_ask_price(el[1][SELL_PRICE_COLUMN], market),
                     quantity,
-                    el[1]['close'] # 현재가를 종가로 기준잡음
+                    el[1]["close"],  # 현재가를 종가로 기준잡음
                 )
 
                 # 이미 담겨있는 종목이거나, 이미 구매한 종목이라면 제외
@@ -178,23 +186,19 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
         # 매도할(보유한) 주식이 있음
         if len(holding_stock_list) > 0:
             for item in holding_stock_list:
-                target = today_data.loc[(today_data['ticker_id'] == item.ticker_id)]
+                target = today_data.loc[(today_data["ticker_id"] == item.ticker_id)]
                 # TODO: 이런거 상폐 당한건가?
                 if len(target) == 0:
                     continue
 
                 # 현재가 조정
-                item.current_price = target['close'].values[0]
+                item.current_price = target["close"].values[0]
 
                 if target[SELL_PRICE_COLUMN].values[0] > item.sell_price:
                     sell_request_list.append(item)
 
         today_result = ResultItem(
-            today,
-            cash,
-            copy.deepcopy(holding_stock_list),
-            buying_stock_list,
-            selling_stock_list
+            today, cash, copy.deepcopy(holding_stock_list), buying_stock_list, selling_stock_list
         )
         final_result.append(today_result)
 
