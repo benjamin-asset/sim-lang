@@ -14,10 +14,9 @@ def test_basic():
     from test.test_code.calculate.basic import run
 
     from_date = datetime.date(2017, 1, 1)
-    to_date = datetime.date(2017, 12, 31)
+    to_date = datetime.date(2017, 1, 31)
 
-    now = time.time()
-    calculator = Calculator()
+    calculator = Calculator(False)
     result = calculator.calculate(
         """
         (ts_delay(increase_from_lowest_price(low, close, 3), 1) >= 0.1 or ts_delay(increase_from_lowest_price(low, close, 3), 2) >= 0.1) and decrease_from_highest_price(high, close, 3) < 0 and decrease_from_highest_price(high, close, 3) > -0.1 and ibs(high, low, close) < 0.25 and rank(sma(tr_val, 5)) > 0.8
@@ -40,12 +39,43 @@ def test_basic():
     assert check(result, test_result, from_date, to_date)
 
 
+def test_1():
+    from test.test_code.calculate.test1 import run
+
+    from_date = datetime.date(2017, 1, 1)
+    to_date = datetime.date(2017, 12, 31)
+
+    calculator = Calculator(False)
+    result = calculator.calculate(
+        """
+        (ts_delay(pct_change(stochastic_fast_k(pdi(high, low, close, 5), pdi(high, low, close, 5), pdi(high, low, close, 5), 20), 3), 1) >= 0.1 or ts_delay(pct_change(stochastic_fast_k(pdi(high, low, close, 5), pdi(high, low, close, 5), pdi(high, low, close, 5), 20), 3), 2) >= 0.1) and open > close and pct_change(close, 1) < 0 and ibs(high, low, close) < 0.25 and rank(sma(tr_val, 5)) > 0.8
+        """,
+        """
+        ts_delay(increase_from_lowest_price(group['low'], group['close'], 3), 1) + ts_delay(increase_from_lowest_price(group['low'], group['close'], 3), 2)
+        """,
+        """
+        ts_delay(close, 1) * 0.98
+        """,
+        """
+        ts_delay(close, 1) * 1.02
+        """,
+        Market.kospi,
+        from_date,
+        to_date
+    )
+
+    test_result = run(from_date, to_date)
+    assert check(result, test_result, from_date, to_date)
+
+
 def check(lhs, rhs, from_date, to_date):
     lhs = to_test_format(lhs, from_date, to_date)
     rhs = to_test_format(rhs, from_date, to_date)
 
     lhs = lhs.to_dict()
     rhs = rhs.to_dict()
+    print('lhs = {}'.format(lhs))
+    print('rhs = {}'.format(rhs))
     return lhs == rhs
 
 
