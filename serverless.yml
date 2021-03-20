@@ -1,0 +1,22 @@
+service: sim-lang
+useDotenv: true
+
+provider:
+  name: aws
+  stage: ${opt:stage, 'prod'} # Set the default stage used. Default is dev
+  region: ${opt:region, 'ap-northeast-2'}
+  timeout: 900
+  memorySize: 512
+  logRetentionInDays: 14
+  environment:
+    ENV: ${opt:stage, 'prod'}
+  ecr:
+    images:
+      appimage:
+        path: ./
+  lambdaHashingVersion: "20201221"
+
+functions:
+  main:
+    image:
+      name: appimage

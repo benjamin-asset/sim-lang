@@ -334,3 +334,4 @@ pandas_practice.py
 
 tests/resources/*.csv
 .serverless
+node_modules

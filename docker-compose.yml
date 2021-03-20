@@ -2,10 +2,7 @@ version: "3"
 services:
   sim:
     image: sim:latest
-    build:
-      context: .
-      args:
-        FUNCTION_DIR: /app/
+    build: .
     env_file:
       - .env
     ports:
