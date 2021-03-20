@@ -83,8 +83,6 @@ def back_test(reader, start_date, end_date):
     pnl = {'date': [start_date], 'balance': [seed_money]}
     # 2. 일봉 가져오기
     day_price = reader.get_day_price_data(Universe.total, True, False, start_date, end_date)
-
-    t = reader.get_simulating_data(Universe.total, [Field.open], start_date, end_date)
     index_day_price = reader.get_index_day_price_data(Universe.kosdaq, start_date, end_date)
     # 3. 매수 조건 및 우선순위 생성
     day_price, index_day_price = add_data_to_day_price(day_price, index_day_price)

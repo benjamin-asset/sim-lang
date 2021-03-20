@@ -10,6 +10,15 @@ from exception import *
 from language.language_definition import *
 from language.constant import RESULT_COLUMN, PRIORITY_COLUMN, BUY_PRICE_COLUMN, SELL_PRICE_COLUMN
 from utils.parameter import Field
+import inspect
+import utils.indicator
+import enum
+from language.language_utils import import_module
+
+indicator = import_module('utils', 'indicator')
+function = import_module('utils', 'function')
+language = import_module('language', 'language_definition')
+parameter = import_module('utils', 'parameter')
 
 
 class CompileResult:
@@ -193,8 +202,32 @@ class Compiler(ast.NodeTransformer):
         if function_name in built_in_function_list:
             fun = built_in_function_list[built_in_function_list.index(function_name)]
             args = list()
-            for argument in node.args:
-                if isinstance(argument, ast.Name):
+            callable_function = None
+            if fun.module == 'language':
+                callable_function = getattr(language, function_name)
+            elif fun.module == 'indicator':
+                callable_function = getattr(indicator, function_name)
+            elif fun.module == 'function':
+                callable_function = getattr(function, function_name)
+            else:
+                raise Exception()
+
+            function_spec = inspect.getfullargspec(callable_function)
+            function_parameter_name_list = function_spec[0]
+            function_annotation_list = function_spec.annotations
+
+            for index, argument in enumerate(node.args):
+                parameter_name = function_parameter_name_list[index]
+                parameter_type = function_annotation_list[parameter_name]
+                is_enum = isinstance(parameter_type, enum.EnumMeta)
+                if is_enum:
+                    enum_node = ast.copy_location(
+                        Attribute(Attribute(Name("parameter"), get_enum_name(parameter_type)), argument.id),
+                        argument
+                    )
+                    args.append(enum_node)
+
+                elif isinstance(argument, ast.Name):
                     if argument.id in Field.__members__:
                         self.fields.add(Field.__members__[argument.id])
                         arg = ast.Constant(argument.id, argument.id)
