@@ -46,15 +46,12 @@ RUN mkdir -p ${FUNCTION_DIR}
 # 처리자 함수 복사
 COPY src/* ${FUNCTION_DIR}
 # 선택 사항 – 함수의 종속성 설치
-# RUN python${RUNTIME_VERSION} -m pip install -r requirements.txt --target ${FUNCTION_DIR}
 # Python용 Lambda Runtime Interface Client 설치
 RUN python${RUNTIME_VERSION} -m pip install pip -U
 RUN python${RUNTIME_VERSION} -m pip install awslambdaric --target ${FUNCTION_DIR}
 RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python${RUNTIME_VERSION} -
 COPY pyproject.toml poetry.lock /
-#COPY requirements.txt /
 RUN $HOME/.poetry/bin/poetry config virtualenvs.create false && $HOME/.poetry/bin/poetry install
-#RUN pip install -r /requirements.txt
 # 3단계 - 최종 런타임 이미지
 # Python 이미지의 새로운 복사본 가져오기
 FROM python-alpine
