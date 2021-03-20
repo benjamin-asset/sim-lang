@@ -20,10 +20,24 @@ RUN apk add --no-cache \
     automake \
     libexecinfo-dev \
     make \
-    cmake
+    cmake \
+    git \
+    curl
 # 파이썬 관련 의존성 설치
-RUN apk add --no-cache gcc musl-dev python3-dev libffi-dev openssl-dev cargo
-
+RUN apk add --no-cache \
+  gcc \
+  musl-dev \
+  python3-dev \
+  libffi-dev \
+  openssl-dev \
+  cargo \
+  gfortran \
+  build-base \
+  wget \
+  freetype-dev \
+  libpng-dev \
+  openblas-dev
+RUN ln -s /usr/include/locale.h /usr/include/xlocale.h
 # 빌드의 현재 단계에 전역 args 포함
 ARG FUNCTION_DIR
 ARG RUNTIME_VERSION
@@ -32,15 +46,12 @@ RUN mkdir -p ${FUNCTION_DIR}
 # 처리자 함수 복사
 COPY src/* ${FUNCTION_DIR}
 # 선택 사항 – 함수의 종속성 설치
-# RUN python${RUNTIME_VERSION} -m pip install -r requirements.txt --target ${FUNCTION_DIR}
 # Python용 Lambda Runtime Interface Client 설치
 RUN python${RUNTIME_VERSION} -m pip install pip -U
 RUN python${RUNTIME_VERSION} -m pip install awslambdaric --target ${FUNCTION_DIR}
-
-RUN python${RUNTIME_VERSION} -m pip install poetry
+RUN curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python${RUNTIME_VERSION} -
 COPY pyproject.toml poetry.lock /
-RUN poetry config virtualenvs.create false && poetry install
-
+RUN $HOME/.poetry/bin/poetry config virtualenvs.create false && $HOME/.poetry/bin/poetry install
 # 3단계 - 최종 런타임 이미지
 # Python 이미지의 새로운 복사본 가져오기
 FROM python-alpine

@@ -1,0 +1,22 @@
+{
+  "name": "sim-lang",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "deploy": "serverless deploy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benjamin-asset/sim-lang.git"
+  },
+  "author": "yang@heechan.kr",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/benjamin-asset/sim-lang/issues"
+  },
+  "homepage": "https://github.com/benjamin-asset/sim-lang#readme",
+  "dependencies": {
+    "serverless": "^2.29.0"
+  }
+}
