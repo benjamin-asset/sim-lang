@@ -1,14 +1,16 @@
 import copy
 import datetime
 
-from language.constant import RESULT_COLUMN, PRIORITY_COLUMN, BUY_PRICE_COLUMN, SELL_PRICE_COLUMN
+from language.constant import *
 from utils.tools import get_bid_price, get_ask_price
 from utils.parameter import Market
 
 
 class Item:
-    def __init__(self, ticker_id: str, buy_price: int, sell_price: int, quantity: int, current_price: int):
+    def __init__(self, ticker_id: str, market: Market, buy_price: int, sell_price: int, quantity: int,
+                 current_price: int):
         self.ticker_id = ticker_id
+        self.market = market
         self.buy_price = buy_price
         self.sell_price = sell_price
         self.quantity = quantity
@@ -19,9 +21,10 @@ class Item:
             return False
 
         return self.ticker_id == other.ticker_id and \
-            self.buy_price == other.buy_price and \
-            self.sell_price and other.sell_price and \
-            self.quantity and other.quantity
+               self.market == other.market and \
+               self.buy_price == other.buy_price and \
+               self.sell_price and other.sell_price and \
+               self.quantity and other.quantity
 
     def __repr__(self):
         return str(self.__dict__)
@@ -96,6 +99,8 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
     final_result = []
 
     for today, today_data in date_grouped_calculation_result:
+        candidate_group = date_grouped_buying_candidate_list.get_group(today)
+
         # 오늘 매수한 주식 리스트
         buying_stock_list = []
 
@@ -105,7 +110,7 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
         if len(buy_request_list) > 0:
             # 매수 시도
             for item in buy_request_list:
-                target = today_data.loc[(today_data['ticker_id'] == item.ticker_id)]
+                target = today_data.loc[(today_data[TICKER_ID_COLUMN] == item.ticker_id)]
 
                 # TODO: 상폐?
                 if len(target) == 0:
@@ -114,6 +119,10 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
                 # 보유 최대 종목 수를 초과할 경우
                 if len(holding_stock_list) >= max_holding_stock_quantity:
                     break
+
+                # TODO: 오늘 마켓
+                market = candidate_group[MARKET_COLUMN]
+                item.buy_price = get_bid_price(item.buy_price, market)
 
                 # 매수가보다 저가가 낮으므로 매수 성공
                 if target['low'].values[0] < item.buy_price:
@@ -136,6 +145,10 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
                 if not target['is_active']:
                     continue
 
+                # TODO: 오늘 마켓
+                market = candidate_group[MARKET_COLUMN]
+                item.sell_price = get_ask_price(item.sell_price, market)
+
                 # 매도 성공
                 if target['high'].values[0] > item.sell_price:
                     cash += item.sell_price * item.quantity
@@ -146,7 +159,6 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
 
         # 추가 매수 할 수 있음
         if len(holding_stock_list) < max_holding_stock_quantity and cash >= min_amount_per_stock:
-            candidate_group = date_grouped_buying_candidate_list.get_group(today)
             sorted_group = candidate_group.sort_values(by=[PRIORITY_COLUMN])
 
             # 주식 당 매수 최소 금액을 넘기면서도 최대한 많은 종목을 살 수 있도록 종목 당 매수 금액을 조정
@@ -158,15 +170,17 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
 
             # 매수 시도 리스트에 종목 담기
             for el in sorted_group.iterrows():
-                buy_price = get_bid_price(el[1][BUY_PRICE_COLUMN], market)
+                buy_price = el[1][BUY_PRICE_COLUMN]
+                sell_price = el[1][SELL_PRICE_COLUMN]
 
                 quantity = int(available_cash // buy_price)
                 item = Item(
-                    el[1]['ticker_id'],
+                    el[1][TICKER_ID_COLUMN],
+                    el[1][MARKET_COLUMN],
                     buy_price,
-                    get_ask_price(el[1][SELL_PRICE_COLUMN], market),
+                    sell_price,
                     quantity,
-                    el[1]['close'] # 현재가를 종가로 기준잡음
+                    el[1][CLOSE_COLUMN] # 현재가를 종가로 기준잡음
                 )
 
                 # 이미 담겨있는 종목이거나, 이미 구매한 종목이라면 제외
