@@ -3,7 +3,7 @@ from language.language_utils import import_module
 
 indicator = import_module('utils', 'indicator')
 function = import_module('utils', 'function')
-language = import_module('language_definition')
+language = import_module('language', 'language_definition')
 
 compiler = Compiler()
 
@@ -62,3 +62,25 @@ def test_if():
     print(compiled_code)
     print(target_code)
     assert (compiled_code == target_code)
+
+
+def test_divide():
+    compile_result = compiler.compile(
+        """
+        (close / open) < 0.2
+        """,
+        """""",
+        """""",
+        """"""
+    )
+    target_code = normalize(
+        remove_indent(
+            """
+            df['#result'] = df['is_active'] & (df['close'] / df.where(df['open'] != 0, 1e-8) < 0.2)
+            """
+        )
+    )
+
+    print(compile_result.item_list[-4].code)
+    print(target_code)
+    assert (compile_result.item_list[-4].code == target_code)

@@ -13,11 +13,13 @@ from utils.parameter import Market, Universe, Field
 from decimal import Decimal
 import boto3
 
+
 load_dotenv()
 
 indicator = import_module('utils', 'indicator')
 function = import_module('utils', 'function')
 language = import_module('language', 'language_definition')
+parameter = import_module('utils', 'parameter')
 
 TAG = '[CalculateUnit]'
 
@@ -62,6 +64,7 @@ class CalculateUnit:
             if field not in field_list:
                 field_list.append(field)
         rows = reader.get_simulating_data(Universe.total, field_list, start_date, end_date)
+        print(f'start_date = {start_date}, end_date = {end_date} row size = {len(rows)}')
 
         if len(rows) == 0:
             return None
@@ -75,9 +78,9 @@ class CalculateUnit:
             # TODO: is_rank 값 잘 들어가는지 계속 확인하고, 검증할것
             # 랭크 함수는 날짜 단위로 동작
             if item.is_rank:
-                y = total_df.groupby('date', as_index=False).apply(lambda df: self._calculate(item.code, df))
+                y = total_df.groupby('date').apply(lambda df: self._calculate(item.code, df))
             else:   # 랭크 함수 이외의 함수는 종목 단위로 동작
-                y = total_df.groupby('ticker_id', as_index=False).apply(lambda df: self._calculate(item.code, df))
+                y = total_df.groupby('ticker_id').apply(lambda df: self._calculate(item.code, df))
 
             different_columns = total_df.columns.symmetric_difference(y.columns)
             for column in different_columns:

@@ -41,15 +41,21 @@ class Name(ast.Name):
 
 
 class Attribute(ast.Attribute):
-    def __init__(self, expr_value, identifier_attr, expr_context_ctx=ast.Load()):
-        super().__init__(expr_value, identifier_attr, expr_context_ctx)
-        ast.Attribute.__setattr__(self, 'attr', identifier_attr)
-        ast.Attribute.__setattr__(self, 'value', expr_value)
+    def __init__(self, value, attr, expr_context_ctx=ast.Load()):
+        super().__init__(value, attr, expr_context_ctx)
+        ast.Attribute.__setattr__(self, 'attr', attr)
+        ast.Attribute.__setattr__(self, 'value', value)
 
 
 class Call(ast.Call):
-    def __init__(self, expr_func, expr, *args, **kwargs):
-        super().__init__(expr_func, expr, *args, **kwargs)
+    def __init__(self, function, arguments):
+        super().__init__(
+            expr_func=function,
+            expr=function,
+            func=function,
+            args=arguments,
+            keywords=[]
+        )
         self.name = call_to_name(self)
 
 
@@ -184,6 +190,27 @@ class Compiler(ast.NodeTransformer):
 
         return node
 
+    def visit_BinOp(self, node: ast.BinOp) -> Any:
+        if isinstance(node.op, ast.Div):
+            return ast.copy_location(
+                ast.BinOp(
+                    self.visit(node.left),
+                    ast.Div(),
+                    Call(
+                        Attribute(Name('df'), 'where'),
+                        [
+                            ast.Compare(
+                                left=self.visit(node.right),
+                                ops=[ast.NotEq()],
+                                comparators=[ast.Constant(0, 0)]
+                            ),
+                            ast.Constant(1e-8, 1e-8)
+                        ]
+                    )
+                ), node
+            )
+        return node
+
     def visit_Call(self, node: ast.Call) -> Any:
         function_name = None
         if isinstance(node.func, ast.Attribute):
@@ -279,6 +306,7 @@ class Compiler(ast.NodeTransformer):
         result_item_list = list()
 
         # 사용된 함수, 파라미터 쌍을 코드로 변환함. 미리 필드로 정의해두고, 참조만 하기 위해서
+        added_function_set = set()
         body = list()
         cur_is_rank = False
         for index, node in enumerate(PostOrderIter(self.function_dependency_tree)):
@@ -304,6 +332,11 @@ class Compiler(ast.NodeTransformer):
                     body = list()
 
             cur_is_rank = function.is_rank
+
+            if function.name in added_function_set:
+                continue
+
+            added_function_set.add(function.name)
             body.append(
                 ast.Assign(
                     targets=[to_field(make_constant(node.name))],
@@ -404,8 +437,10 @@ def call_to_name(node: ast.Call):
             args.append(call_to_name(arg))
         elif isinstance(arg, ast.Name):
             args.append(arg.id)
+        elif isinstance(arg, ast.Attribute):
+            args.append(arg.attr)
         else:
-            args.append(str(arg.value))
+            args.append(str(arg))
 
     if isinstance(node.func, ast.Attribute):
         function_id = f'{node.func.value.id}_{node.func.attr}'
@@ -435,3 +470,7 @@ def to_or(left, right):
         ast.BitOr(),
         right
     )
+
+
+def get_enum_name(enum_meta: enum.EnumMeta) -> str:
+    return str(enum_meta)[str(enum_meta).index("'") + 1: str(enum_meta).rindex("'")]
