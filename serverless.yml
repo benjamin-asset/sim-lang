@@ -20,4 +20,3 @@ functions:
   main:
     image:
       name: appimage
-    handler: app.handler
