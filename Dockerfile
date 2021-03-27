@@ -67,4 +67,3 @@ RUN chmod 755 /usr/bin/aws-lambda-rie
 COPY docker/entry.sh /
 RUN chmod 755 /entry.sh
 ENTRYPOINT [ "/entry.sh" ]
-CMD [ "app.handler" ]
