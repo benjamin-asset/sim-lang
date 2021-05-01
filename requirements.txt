@@ -44,7 +44,7 @@ pluggy==0.13.1; python_version >= "3.6" and python_full_version < "3.0.0" or pyt
 ptyprocess==0.7.0; python_version >= "3.6"
 py==1.10.0; python_version >= "3.6" and python_full_version < "3.0.0" or python_full_version >= "3.4.0" and python_version >= "3.6"
 pycparser==2.20; python_full_version >= "3.7.9" and python_full_version < "4.0.0" and python_version >= "3.6"
-pymysql==1.0.2; python_version >= "3.6"
+pymysql==0.9.3
 pyparsing==2.4.7; python_version >= "3.6" and python_full_version < "3.0.0" or python_full_version >= "3.4.0" and python_version >= "3.6"
 pypika==0.47.7; python_full_version >= "3.7.9" and python_full_version < "4.0.0"
 pytest==6.2.3; python_version >= "3.6"

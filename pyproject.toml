@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sim-lang"
-version = "0.2.0"
+version = "0.3.0"
 packages = [
     { include = "sim_lang" },
 ]
@@ -9,7 +9,7 @@ authors = ["Kyoodong <wind.dong.dream@gmail.com\">"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-PyMySQL = "^1.0.2"
+PyMySQL = "^0.9.3"
 pytest = "^6.2.2"
 python-dotenv = "^0.15.0"
 pandas = "^1.2.1"

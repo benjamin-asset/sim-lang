@@ -14,7 +14,7 @@ readme = ""
 setup(
     long_description=readme,
     name="sim-lang",
-    version="0.2.0",
+    version="0.3.0",
     description="benjamin asset simulation langugage",
     python_requires="==3.*,>=3.8.0",
     author="Kyoodong",
@@ -27,7 +27,7 @@ setup(
         "boto3==1.*,>=1.17.27",
         "docstring-parser==0.*,>=0.7.3",
         "pandas==1.*,>=1.2.1",
-        "pymysql==1.*,>=1.0.2",
+        "pymysql==0.*,>=0.9.3",
         "pytest==6.*,>=6.2.2",
         "python-dotenv==0.*,>=0.15.0",
         "utils",
