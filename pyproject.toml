@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sim-lang"
-version = "0.3.3"
+version = "0.3.4"
 packages = [
     { include = "sim_lang" },
 ]

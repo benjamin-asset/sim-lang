@@ -11,7 +11,6 @@ from utils.executor import Executor
 from utils.reader import Reader
 from utils.parameter import Market, Universe, Field
 from decimal import Decimal
-import boto3
 
 load_dotenv()
 
@@ -44,8 +43,6 @@ class CalculateUnit:
     def __init__(self, id: str, save_result=True):
         self.compiler = Compiler()
         self.progress = 0.0
-        self.dynamodb = boto3.resource("dynamodb", endpoint_url="http://localhost:8000")
-        self.result_table = self.dynamodb.Table("calculate_unit_result")
         self.id = id
         self.save_result = save_result
 
@@ -96,11 +93,6 @@ class CalculateUnit:
                 total_df.insert(0, column, y[column])
             completed_job_count += 1
             self.progress = Decimal(total_job_count / completed_job_count)
-
-            if self.save_result:
-                response = self.result_table.put_item(
-                    Item=Result(self.id, str(start_date), str(end_date), self.progress).__dict__
-                )
 
         logging.debug("{} execute time : {:0.3f}s".format(TAG, time.time() - now))
         return total_df
