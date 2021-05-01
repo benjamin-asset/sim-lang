@@ -209,7 +209,13 @@ class Compiler(ast.NodeTransformer):
                     )
                 ), node
             )
-        return node
+        return ast.copy_location(
+            ast.BinOp(
+                self.visit(node.left),
+                node.op,
+                self.visit(node.right)
+            ), node
+        )
 
     def visit_Call(self, node: ast.Call) -> Any:
         function_name = None
