@@ -1,23 +1,20 @@
-from language.language_utils import import_module
-from language.execute.calculator import Calculator
-from language.execute.executor import execute
-
 import datetime
-import time
-from utils.parameter import Market
-import math
 
+from utils.parameter import Market
+
+from sim_lang.language.execute.executor import execute
+from sim_lang.language.language_utils import import_module
 
 Indicator = import_module("utils", "indicator")
 Function = import_module("utils", "function")
 
 indicator = import_module("utils", "indicator")
 function = import_module("utils", "function")
-language = import_module("language", "language_definition")
+language = import_module("sim_lang", "language", "language_definition")
 
 
-from_date = datetime.date(2017, 1, 1)
-to_date = datetime.date(2017, 2, 1)
+from_date = datetime.date(2020, 1, 1)
+to_date = datetime.date(2021, 1, 1)
 
 
 if __name__ == "__main__":
@@ -40,4 +37,9 @@ if __name__ == "__main__":
         10,
         1000000,
     )
-    print(result)
+    for r in result:
+        print(r.holding_stock_list)
+        sum = 0
+        for stock in r.holding_stock_list:
+            sum += stock.quantity * stock.current_price
+        print(sum)

@@ -6,18 +6,18 @@ from collections import deque
 from typing import Any
 from anytree import Node, PostOrderIter
 
-from exception import *
-from language.language_definition import *
-from language.constant import RESULT_COLUMN, PRIORITY_COLUMN, BUY_PRICE_COLUMN, SELL_PRICE_COLUMN
+from sim_lang.exception import *
+from sim_lang.language.language_definition import *
+from sim_lang.language.constant import RESULT_COLUMN, PRIORITY_COLUMN, BUY_PRICE_COLUMN, SELL_PRICE_COLUMN
 from utils.parameter import Field
 import inspect
 import utils.indicator
 import enum
-from language.language_utils import import_module
+from sim_lang.language.language_utils import import_module
 
 indicator = import_module("utils", "indicator")
 function = import_module("utils", "function")
-language = import_module("language", "language_definition")
+language = import_module("sim_lang", "language", "language_definition")
 parameter = import_module("utils", "parameter")
 
 

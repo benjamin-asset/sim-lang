@@ -3,9 +3,9 @@ import time
 import logging
 
 from dotenv import load_dotenv
-from language.language_utils import import_module
+from sim_lang.language.language_utils import import_module
 from datetime import date
-from language.compiler import Compiler
+from sim_lang.language.compiler import Compiler
 
 from utils.executor import Executor
 from utils.reader import Reader
@@ -17,7 +17,7 @@ load_dotenv()
 
 indicator = import_module("utils", "indicator")
 function = import_module("utils", "function")
-language = import_module("language", "language_definition")
+language = import_module("sim_lang", "language", "language_definition")
 
 # import utils.indicator as indicator
 # import utils.function as function
