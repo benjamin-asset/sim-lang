@@ -37,6 +37,16 @@ class Item:
     def __str__(self):
         return str(self.__dict__)
 
+    def to_dict(self):
+        d = dict()
+        d['ticker_id'] = self.ticker_id
+        d['market'] = self.market.name
+        d['buy_price'] = int(self.buy_price)
+        d['sell_price'] = int(self.sell_price)
+        d['quantity'] = self.quantity
+        d['current_price'] = int(self.current_price)
+        return d
+
 
 class Stock:
     def __init__(self, ticker_id: str, price: int, quantity: int):
@@ -56,6 +66,13 @@ class Stock:
     def __str__(self):
         return str(self.__dict__)
 
+    def to_dict(self):
+        d = dict()
+        d['ticker_id'] = self.ticker_id
+        d['price'] = int(self.price)
+        d['quantity'] = self.quantity
+        return d
+
 
 class ResultItem:
     def __init__(
@@ -68,15 +85,24 @@ class ResultItem:
     ):
         self.date = date
         self.cash = cash
-        self.holding_stock_list = holding_stock_list
-        self.buying_stock_list = buying_stock_list
-        self.selling_stock_list = selling_stock_list
+        self.holding_stock_list = [x.to_dict() for x in holding_stock_list]
+        self.buying_stock_list = [x.to_dict() for x in buying_stock_list]
+        self.selling_stock_list = [x.to_dict() for x in selling_stock_list]
 
     def __repr__(self):
         return str(self)
 
     def __str__(self):
         return str(self.__dict__)
+
+    def to_dict(self):
+        d = dict()
+        d['date'] = self.date.isoformat()
+        d['cash'] = self.cash
+        d['holding_stock_list'] = self.holding_stock_list
+        d['buying_stock_list'] = self.buying_stock_list
+        d['selling_stock_list'] = self.selling_stock_list
+        return d
 
 
 def simulate(calculation_result, market: Market, max_holding_stock_quantity: int, cash: int, min_amount_per_stock):

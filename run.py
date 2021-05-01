@@ -1,5 +1,5 @@
 import datetime
-
+import json
 from utils.parameter import Market
 
 from sim_lang.language.execute.executor import execute
@@ -38,8 +38,12 @@ if __name__ == "__main__":
         1000000,
     )
     for r in result:
-        print(r.holding_stock_list)
+        res = r.to_dict()
+        print(res)
+        ss = json.dumps(res)
+        print(ss)
+        print(res['holding_stock_list'])
         sum = 0
-        for stock in r.holding_stock_list:
-            sum += stock.quantity * stock.current_price
+        for stock in res['holding_stock_list']:
+            sum += stock['quantity'] * stock['current_price']
         print(sum)
