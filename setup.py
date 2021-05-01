@@ -15,7 +15,7 @@ readme = ''
 setup(
     long_description=readme,
     name='sim-lang',
-    version='0.3.1',
+    version='0.3.2',
     description='benjamin asset simulation langugage',
     python_requires='==3.*,>=3.8.0',
     author='Kyoodong',
