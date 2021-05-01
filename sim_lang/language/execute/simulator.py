@@ -130,7 +130,7 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
                     break
 
                 # TODO: 오늘 마켓
-                market = candidate_group[MARKET_COLUMN]
+                market = Market.kospi
                 item.buy_price = get_bid_price(item.buy_price, market)
 
                 # 매수가보다 저가가 낮으므로 매수 성공
@@ -151,11 +151,12 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
                     continue
 
                 # 거래 정지
-                if not target["is_active"]:
-                    continue
+                # print(target["is_active"])
+                # if not target["is_active"]:
+                #     continue
 
                 # TODO: 오늘 마켓
-                market = candidate_group[MARKET_COLUMN]
+                market = Market.kospi
                 item.sell_price = get_ask_price(item.sell_price, market)
 
                 # 매도 성공
@@ -185,7 +186,7 @@ def simulate(calculation_result, market: Market, max_holding_stock_quantity: int
                 quantity = int(available_cash // buy_price)
                 item = Item(
                     el[1][TICKER_ID_COLUMN],
-                    el[1][MARKET_COLUMN],
+                    Market.kospi,
                     buy_price,
                     sell_price,
                     quantity,

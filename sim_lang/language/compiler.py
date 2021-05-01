@@ -305,6 +305,7 @@ class Compiler(ast.NodeTransformer):
             added_function_set.add(function.name)
             body.append(ast.Assign(targets=[to_field(make_constant(node.name))], value=function.node, lineno=index))
 
+#parameter_name = function_parameter_name_list[index]
         expression_code = f"df['{RESULT_COLUMN}'] = df['is_active'] & ({ast.unparse(expression_tree)})"
         result_item_list.append(CompileResult.Item(expression_code, False))
 
@@ -385,6 +386,8 @@ def call_to_name(node: ast.Call):
             args.append(arg.id)
         elif isinstance(arg, ast.Attribute):
             args.append(arg.attr)
+        elif isinstance(arg, ast.Constant):
+            args.append(str(arg.value))
         else:
             args.append(str(arg))
 

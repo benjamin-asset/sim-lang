@@ -756,7 +756,7 @@ python-telegram-bot = "^12.8"
 type = "git"
 url = "https://github.com/benjamin-asset/utils.git"
 reference = "master"
-resolved_reference = "7989ba3d9f2d6a142806f37b26fe960f8914dd50"
+resolved_reference = "06a60fbb38adbf8fe7d0f4aecd21e2e403f729c3"
 
 [[package]]
 name = "yarl"

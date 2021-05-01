@@ -1,5 +1,6 @@
 from language.language_utils import import_module
 from language.execute.calculator import Calculator
+from language.execute.executor import execute
 
 import datetime
 import time
@@ -20,13 +21,12 @@ to_date = datetime.date(2017, 2, 1)
 
 
 if __name__ == "__main__":
-    calculator = Calculator()
-    result = calculator.calculate(
+    result = execute(
         """
         sma(close, 5) >= 0.1
         """,
         """
-        ts_delay(increase_from_lowest_price(low, close, 3), 1) + ts_delay(increase_from_lowest_price(low, close, 3), 2)
+        sma(close, 5) >= 0.1
         """,
         """
         ts_delay(close, 1) * 0.98
@@ -37,5 +37,7 @@ if __name__ == "__main__":
         Market.kospi,
         from_date,
         to_date,
+        10,
+        1000000,
     )
     print(result)

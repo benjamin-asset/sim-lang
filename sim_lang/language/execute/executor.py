@@ -1,6 +1,6 @@
 import datetime
 from utils.parameter import Market
-import language.execute.calculator as calculator
+from language.execute.calculator import Calculator
 import language.execute.simulator as simulator
 
 
@@ -16,6 +16,7 @@ def execute(
     cash: int,
     min_amount_per_stock=0,
 ):
+    calculator = Calculator()
     calculation_result = calculator.calculate(
         source_code, priority_code, buying_price_code, selling_price_code, market, from_date, to_date
     )
