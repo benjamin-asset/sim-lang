@@ -73,7 +73,7 @@ class CalculateUnit:
         for field in required_field_list:
             if field not in field_list:
                 field_list.append(field)
-        rows = reader.get_simulating_data(Universe.total, field_list, start_date, end_date, [Field.open, Field.close, Field.ticker_id])
+        rows = reader.get_simulating_data(Universe.total, field_list, start_date, end_date, [Field.open, Field.close, Field.ticker_id, Field.low, Field.high])
 
         if len(rows) == 0:
             return None

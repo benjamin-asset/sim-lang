@@ -738,7 +738,7 @@ brotli = ["brotlipy (>=0.6.0)"]
 
 [[package]]
 name = "utils"
-version = "5.2.0"
+version = "5.2.1"
 description = "Alpha trading utils with pandas"
 category = "main"
 optional = false
@@ -756,7 +756,7 @@ python-telegram-bot = "^12.8"
 type = "git"
 url = "https://github.com/benjamin-asset/utils.git"
 reference = "master"
-resolved_reference = "06a60fbb38adbf8fe7d0f4aecd21e2e403f729c3"
+resolved_reference = "d55c543161b4ea6885d8de1fce44f35da7083a6f"
 
 [[package]]
 name = "yarl"
