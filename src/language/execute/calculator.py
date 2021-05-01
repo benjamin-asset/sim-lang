@@ -1,4 +1,4 @@
-from language.execute.calculating_unit import CalculateUnit
+from language.execute.calculate_unit import CalculateUnit
 import datetime
 import pandas as pd
 from utils.parameter import Market
@@ -32,7 +32,7 @@ class Calculator:
             # 앞뒤로 여유 일수를 붙여줌
             effective_from_date = from_date - datetime.timedelta(days=offset)
             effective_to_date = local_to_date + datetime.timedelta(days=offset)
-            unit = CalculateUnit()
+            unit = CalculateUnit('1', False)
             result = unit.calculate(source_code, priority_code, buying_price_code, selling_price_code,
                                           market, effective_from_date, effective_to_date)
             if result is not None:
