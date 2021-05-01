@@ -44,7 +44,7 @@ ARG RUNTIME_VERSION
 # 함수 디렉토리 만들기
 RUN mkdir -p ${FUNCTION_DIR}
 # 처리자 함수 복사
-COPY src/* ${FUNCTION_DIR}
+COPY sim_lang/* ${FUNCTION_DIR}
 # 선택 사항 – 함수의 종속성 설치
 # Python용 Lambda Runtime Interface Client 설치
 RUN python${RUNTIME_VERSION} -m pip install pip -U

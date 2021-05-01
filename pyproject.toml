@@ -1,6 +1,9 @@
 [tool.poetry]
 name = "sim-lang"
 version = "0.1.0"
+packages = [
+    { include = "sim_lang" },
+]
 description = "benjamin asset simulation langugage"
 authors = ["Kyoodong <wind.dong.dream@gmail.com\">"]
 
@@ -15,9 +18,16 @@ docstring-parser = "^0.7.3"
 boto3 = "^1.17.27"
 utils = { git = "https://github.com/benjamin-asset/utils.git" }
 
+
+[tool.poetry.dev-dependencies]
+dephell = "^0.8.3"
 [tool.black]
 line-length = 119
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.dephell.main]
+from = {format = "poetry", path = "pyproject.toml"}
+to = {format = "setuppy", path = "setup.py"}
